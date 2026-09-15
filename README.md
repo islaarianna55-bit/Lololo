@@ -518,6 +518,7 @@ This section contains 5 form and survey automation templates for n8n. Conduct AI
 | Generate a Song from a Form (Tunova) | A hosted n8n Form collects a text prompt, then Tunova generates an original Suno AI song (v5.5) and returns the audio URL. Core HTTP node — runs on any n8n. Free API key at tunova.ai. | Marketing/Creative | [Link to Template](Forms_and_Surveys/Tunova%20-%20Generate%20a%20song%20from%20a%20form.json) |
 | Qualifying Appointment Requests with AI & n8n Forms | Uses AI to qualify and process appointment requests submitted through n8n Forms. | Sales/Support | [Link to Template](Forms_and_Surveys/Qualifying%20Appointment%20Requests%20with%20AI%20&%20n8n%20Forms.json) |
 | Check a company in seven EU business registers from a form | Somebody submits a company name or registration number through an n8n Form and the workflow reads the official business register of Czechia, Estonia, Finland, France, Norway, Poland or Slovakia, then branches on whether the company is still active. | Finance/Ops | [Link to Template](Forms_and_Surveys/Check%20a%20company%20in%20seven%20EU%20business%20registers%20from%20a%20form.json) |
+| Token Safety Check — HostDeFi | Polls the free HostDeFi token-safety API for a watched token and sends a Telegram alert when the grade drops below C. No API key needed (100 checks/day/IP). | Security/Crypto | [Link to Template](Other_Integrations_and_Use_Cases/Token%20Safety%20Check%20—%20HostDeFi.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />

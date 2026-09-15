@@ -1,0 +1,67 @@
+{
+  "name": "Token Safety Check — HostDeFi",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 30 }]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every 30 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://hostdefi.com/api/v1/safety/solana/{{$json.mint}}",
+        "options": {}
+      },
+      "id": "scan-token",
+      "name": "Scan token (HostDeFi)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "grade-check",
+              "leftValue": "={{$json.grade}}",
+              "rightValue": "C",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "grade-gate",
+      "name": "Grade below C?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "content": "=⚠️ Token safety alert: {{$json.address}} graded **{{$json.grade}}** by HostDeFi. Checks: {{$json.flags}}",
+        "options": {}
+      },
+      "id": "alert",
+      "name": "Send alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Every 30 min": { "main": [[{ "node": "Scan token (HostDeFi)", "type": "main", "index": 0 }]] },
+    "Scan token (HostDeFi)": { "main": [[{ "node": "Grade below C?", "type": "main", "index": 0 }]] },
+    "Grade below C?": { "main": [[{ "node": "Send alert", "type": "main", "index": 0 }]] }
+  },
+  "meta": { "description": "Poll the free HostDeFi token-safety API and alert when a watched token's grade drops. No API key needed (100 checks/day/IP).", "categories": ["crypto", "security", "monitoring"] }
+}
