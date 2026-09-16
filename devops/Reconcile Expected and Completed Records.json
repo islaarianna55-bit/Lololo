@@ -1,0 +1,243 @@
+{
+  "id": "keptickRecordReconciliation",
+  "name": "Reconcile Expected and Completed Records",
+  "description": "Compare expected and completed string IDs. Stop on missing, unexpected or duplicate records, even when counts match. Fictional local demo; no accounts, network requests or credentials.",
+  "active": false,
+  "nodes": [
+    {
+      "id": "read-first",
+      "name": "Read first",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -540,
+        -320
+      ],
+      "parameters": {
+        "content": "## Equal counts can still hide missing work\nRun the healthy demo. Then change demoCase in Choose a demo to wrong_ids, missing, duplicates or empty.\n\nwrong_ids returns three records for three expected IDs, but one ID is missing and another is unexpected. The workflow must fail. Inspect Reconcile record IDs for the difference.\n\nAll example IDs are fictional. No account or external request is required.",
+        "width": 690,
+        "height": 265
+      }
+    },
+    {
+      "id": "trigger",
+      "name": "Run the demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        40
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "demo-config",
+      "name": "Choose a demo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -300,
+        40
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "demo",
+              "name": "demoCase",
+              "type": "string",
+              "value": "healthy"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fixture",
+      "name": "Build fictional batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -60,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const demo = $('Choose a demo').first().json.demoCase;\nconst cases = {\n  healthy: {expectedIds:['DEMO-A','DEMO-B','DEMO-C'], completedIds:['DEMO-C','DEMO-A','DEMO-B']},\n  missing: {expectedIds:['DEMO-A','DEMO-B','DEMO-C'], completedIds:['DEMO-A','DEMO-C']},\n  wrong_ids: {expectedIds:['DEMO-A','DEMO-B','DEMO-C'], completedIds:['DEMO-A','DEMO-B','DEMO-Z']},\n  duplicates: {expectedIds:['DEMO-A','DEMO-B','DEMO-C'], completedIds:['DEMO-A','DEMO-A','DEMO-B']},\n  empty: {expectedIds:['DEMO-A','DEMO-B','DEMO-C'], completedIds:[]}\n};\nif (!Object.hasOwn(cases, demo)) throw new Error('Choose healthy, missing, wrong_ids, duplicates, or empty.');\nreturn [{json:{...cases[demo], allowEmptyExpected:false}}];"
+      }
+    },
+    {
+      "id": "reconcile",
+      "name": "Reconcile record IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// This node expects ONE envelope, including when completedIds is empty.\nconst inputs = $input.all();\nif (inputs.length !== 1) throw new Error('Provide one envelope with expectedIds, completedIds and allowEmptyExpected.');\nconst data = inputs[0].json;\nif (typeof data.allowEmptyExpected !== 'boolean') throw new Error('Set allowEmptyExpected explicitly to true or false.');\nfor (const field of ['expectedIds', 'completedIds']) {\n  if (!Array.isArray(data[field])) throw new Error(`${field} must be an array.`);\n  if (data[field].length > 10000) throw new Error(`${field} exceeds this template limit of 10000 IDs.`);\n  if (data[field].some(id => typeof id !== 'string' || id.trim().length === 0))\n    throw new Error(`${field} must contain nonblank string IDs. Map numeric IDs explicitly before this check.`);\n}\nfunction inspect(ids) {\n  const unique = new Set();\n  const repeated = new Set();\n  for (const id of ids) {\n    if (unique.has(id)) repeated.add(id);\n    unique.add(id);\n  }\n  return {unique, repeated: [...repeated]};\n}\nconst expected = inspect(data.expectedIds);\nconst completed = inspect(data.completedIds);\nconst missingIds = [...expected.unique].filter(id => !completed.unique.has(id));\nconst unexpectedIds = [...completed.unique].filter(id => !expected.unique.has(id));\nconst emptyExpectedRejected = expected.unique.size === 0 && !data.allowEmptyExpected;\nconst matched = !emptyExpectedRejected && missingIds.length === 0 && unexpectedIds.length === 0\n  && expected.repeated.length === 0 && completed.repeated.length === 0;\nreturn [{json:{\n  matched,\n  expectedCount: data.expectedIds.length,\n  completedCount: data.completedIds.length,\n  missingIds, unexpectedIds,\n  duplicateExpectedIds: expected.repeated,\n  duplicateCompletedIds: completed.repeated,\n  emptyExpectedRejected,\n  note: 'Exact string IDs are compared without trimming or case folding; order does not matter. This checks identity coverage, not business correctness or exactly-once execution.'\n}}];"
+      }
+    },
+    {
+      "id": "matched",
+      "name": "All expected records completed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "match",
+              "leftValue": "={{ $json.matched }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pass",
+      "name": "Inspect matched batch",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        740,
+        -65
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "fail",
+      "name": "Stop on incomplete or duplicate work",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        740,
+        160
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "={{ 'Record reconciliation failed: ' + $json.missingIds.length + ' missing; ' + $json.unexpectedIds.length + ' unexpected; ' + $json.duplicateExpectedIds.length + ' repeated expected IDs; ' + $json.duplicateCompletedIds.length + ' repeated completed IDs; empty expected rejected: ' + $json.emptyExpectedRejected + '. Inspect Reconcile record IDs.' }}"
+      }
+    },
+    {
+      "id": "adopt",
+      "name": "Use with real processing",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        360
+      ],
+      "parameters": {
+        "content": "## Connect one completed batch\nReplace the demo with ONE item containing expectedIds, completedIds and allowEmptyExpected. Capture expected IDs before processing; read completed IDs from confirmed downstream results, not attempted inputs. Compare once after the whole batch or loop finishes. Preserve the envelope even if completedIds is [].\n\nUse nonblank strings. Numeric IDs need an explicit mapping, such as String(id), on both sides. Comparison is exact and case sensitive; order is ignored. Rejects duplicates on either side. Maximum 10,000 IDs per array. Empty expected IDs fail unless allowEmptyExpected is explicitly true.\n\nIf a prior node returns zero n8n items, this node will not run. Keep the envelope on a control path or deliberately use Always Output Data and rebuild it; a bare {} is invalid. If filtering is intentional, define the expected eligible batch before processing.",
+        "width": 950,
+        "height": 430
+      }
+    },
+    {
+      "id": "scope",
+      "name": "Limits and independent monitoring",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -365
+      ],
+      "parameters": {
+        "content": "## What this proves\nIdentity coverage of the arrays you supply. It does not verify database commits, record contents, exactly-once effects, or a workflow that never reaches this check. Stop And Error intentionally fails mismatched demos. A separate Error Trigger workflow can notify on automatic failed runs; it does not fire for manual test executions.\n\nFor independent expected-run monitoring, [Keptick setup](https://keptick.aifirm.app/guide?utm_source=github&utm_medium=template&utm_campaign=e08_n8n_record_reconciliation) is optional. This template contains no HTTP node or telemetry. Review IDs before sharing execution data.\n\nMade by Keptick with AI assistance. Not affiliated with n8n.",
+        "width": 840,
+        "height": 330
+      }
+    }
+  ],
+  "connections": {
+    "Run the demo": {
+      "main": [
+        [
+          {
+            "node": "Choose a demo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choose a demo": {
+      "main": [
+        [
+          {
+            "node": "Build fictional batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build fictional batch": {
+      "main": [
+        [
+          {
+            "node": "Reconcile record IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconcile record IDs": {
+      "main": [
+        [
+          {
+            "node": "All expected records completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All expected records completed?": {
+      "main": [
+        [
+          {
+            "node": "Inspect matched batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop on incomplete or duplicate work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}
