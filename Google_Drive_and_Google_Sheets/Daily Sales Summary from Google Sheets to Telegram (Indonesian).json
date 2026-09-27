@@ -1,0 +1,171 @@
+{
+  "name": "Ringkasan Penjualan Harian — Google Sheets ke Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ SETUP (10 menit)\n\n1. **Sheet Anda** harus punya kolom `Tanggal` berformat `YYYY-MM-DD` (mis. `2026-09-27`) dan kolom `Total` berisi angka.\n   Tips: isi kolom Tanggal dengan rumus `=TEXT(TODAY(),\"yyyy-mm-dd\")` supaya formatnya otomatis benar.\n2. **Google Sheets**: sambungkan kredensial Google Anda, pilih spreadsheet dan sheet tempat Anda mencatat order.\n3. **Telegram**: buat bot lewat @BotFather, salin Bot Token-nya ke kredensial node Telegram, lalu ambil Chat ID lewat `https://api.telegram.org/bot<TOKEN>/getUpdates`.\n4. Sesuaikan jam kirim di node jadwal (default 21:00).\n\nLalu AKTIFKAN workflow (toggle di kanan atas).",
+        "height": 380,
+        "width": 400
+      },
+      "id": "nota-setup",
+      "name": "Catatan Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -280]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "Setiap Jam 9 Malam",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GANTI_DENGAN_ID_SPREADSHEET_ANDA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GANTI_DENGAN_NAMA_SHEET_ATAU_GID"
+        },
+        "options": {}
+      },
+      "id": "read-sheet",
+      "name": "Baca Semua Baris",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.Tanggal }}",
+              "rightValue": "={{ $now.format('yyyy-MM-dd') }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "filter-today",
+      "name": "Hanya Hari Ini",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "sum",
+              "field": "Total"
+            },
+            {
+              "aggregation": "count",
+              "field": "Total"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "summarize-total",
+      "name": "Jumlahkan Total",
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "GANTI_DENGAN_CHAT_ID_ANDA",
+        "text": "=📊 Ringkasan Penjualan Hari Ini ({{ $now.format('dd-MM-yyyy') }})\n\nJumlah order: {{$json[\"count_Total\"]}}\nTotal penjualan: Rp{{$json[\"sum_Total\"]}}",
+        "additionalFields": {}
+      },
+      "id": "send-telegram",
+      "name": "Kirim Ringkasan Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [960, 0]
+    }
+  ],
+  "connections": {
+    "Setiap Jam 9 Malam": {
+      "main": [
+        [
+          {
+            "node": "Baca Semua Baris",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baca Semua Baris": {
+      "main": [
+        [
+          {
+            "node": "Hanya Hari Ini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hanya Hari Ini": {
+      "main": [
+        [
+          {
+            "node": "Jumlahkan Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jumlahkan Total": {
+      "main": [
+        [
+          {
+            "node": "Kirim Ringkasan Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
