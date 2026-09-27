@@ -1,0 +1,75 @@
+{
+  "name": "Notifikasi Order Baru — Google Sheets ke Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## ⚙️ SETUP (5 menit)\n\n1. **Google Sheets**: sambungkan kredensial Google Anda, pilih spreadsheet dan sheet tempat Anda mencatat order. Sheet harus punya baris judul, mis. `Nama | Produk | Jumlah | Total`.\n2. **Telegram**: buat bot lewat @BotFather di Telegram, salin Bot Token-nya ke kredensial node Telegram. Kirim satu pesan ke bot Anda dulu, lalu ambil Chat ID lewat `https://api.telegram.org/bot<TOKEN>/getUpdates`.\n3. Sesuaikan teks pesan di node Telegram dengan nama kolom sheet Anda.\n\nLalu AKTIFKAN workflow (toggle di kanan atas).",
+        "height": 340,
+        "width": 380
+      },
+      "id": "nota-setup",
+      "name": "Catatan Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -260]
+    },
+    {
+      "parameters": {
+        "authentication": "triggerOAuth2",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GANTI_DENGAN_ID_SPREADSHEET_ANDA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GANTI_DENGAN_NAMA_SHEET_ATAU_GID"
+        },
+        "event": "rowAdded",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "trigger-sheets",
+      "name": "Baris Baru di Google Sheets",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "GANTI_DENGAN_CHAT_ID_ANDA",
+        "text": "=📦 Order baru masuk!\n\nNama: {{$json[\"Nama\"]}}\nProduk: {{$json[\"Produk\"]}}\nJumlah: {{$json[\"Jumlah\"]}}\nTotal: Rp{{$json[\"Total\"]}}",
+        "additionalFields": {}
+      },
+      "id": "send-telegram",
+      "name": "Kirim Notifikasi Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [520, 0]
+    }
+  ],
+  "connections": {
+    "Baris Baru di Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Kirim Notifikasi Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
