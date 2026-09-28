@@ -360,7 +360,7 @@ Explore 9 Slack automation templates for n8n. Monitor RSS feeds with AI-powered 
 
 ### What n8n templates are available for OpenAI, LLMs, and AI agents?
 
-This is the largest category with 17 AI and LLM templates for n8n. Templates include advanced AI agent demos, web scraping agents, stock analysis crews, customer feedback sentiment analysis, AI-powered lead management with ERPNext, fitness coaching via Strava, candidate shortlisting for HR, RAG pipelines for email and stock reports, social media amplification, WooCommerce support agents, YouTube summarization, and podcast enhancement with Wikipedia.
+This is the largest category with 18 AI and LLM templates for n8n. Templates include advanced AI agent demos, web scraping agents, stock analysis crews, customer feedback sentiment analysis, AI-powered lead management with ERPNext, fitness coaching via Strava, candidate shortlisting for HR, RAG pipelines for email and stock reports, social media amplification, WooCommerce support agents, YouTube summarization, and podcast enhancement with Wikipedia.
 
 | Title | Description | Department | Link |
 |---|---|---|---|
@@ -394,6 +394,7 @@ This is the largest category with 17 AI and LLM templates for n8n. Templates inc
 | AI Stock Image Metadata Generator | Generates title, description, and 20-40 keywords for stock photos using OpenAI Vision. Webhook-triggered, returns CSV-ready metadata. | Content Creation/AI/Photography | [Link to Template](OpenAI_and_LLMs/AI%20Stock%20Image%20Metadata%20Generator.json) |
 | Score inbound leads with AI, reply by SMS or WhatsApp, book calendar slots and alert sales | Normalises leads from web forms, ad platforms and CRM webhooks with a 24 hour duplicate guard, scores them with AI, gives hot leads an instant SMS or WhatsApp reply, three calendar slots, a sales task and a Slack alert, and starts cooler leads on a nurture sequence; a second trigger takes voice agent call summaries. | Sales/AI | [Link to Template](OpenAI_and_LLMs/Score%20inbound%20leads%20with%20AI%2C%20reply%20by%20SMS%20or%20WhatsApp%2C%20book%20calendar%20slots%20and%20alert%20sales.json) |
 | Generate content with AI agents through a QA gate and human approval before publishing | Takes a list of topics by webhook or weekly schedule, researches, outlines and drafts each with AI, runs the draft through a QA gate in code (length, required sections, sources, banned claims), and sends passing drafts to human approval before they reach Google Docs or the CMS as drafts. | Marketing/AI | [Link to Template](OpenAI_and_LLMs/Generate%20content%20with%20AI%20agents%20through%20a%20QA%20gate%20and%20human%20approval%20before%20publishing.json) |
+| Summarize a YouTube Video with the GetYouTubeTranscript Node | Fetches a video's transcript with the GetYouTubeTranscript community node (no Google/YouTube Data API key needed) and summarizes it with OpenAI. The same node's other actions (search, channel/playlist listing, handle resolution) let it double as an AI Agent tool instead of a fixed pipeline. | Content Creation/AI | [Link to Template](OpenAI_and_LLMs/Summarize%20a%20YouTube%20Video%20with%20the%20GetYouTubeTranscript%20Node.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
