@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "command": "sudo apt update && sudo apt upgrade -y"
+        "command": "sudo -n /usr/bin/apt-get -o DPkg::Lock::Timeout=300 update && sudo -n /usr/bin/apt-get -o DPkg::Lock::Timeout=300 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold -y --with-new-pkgs upgrade"
       },
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
@@ -55,23 +55,74 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        448,
-        -16
+        672,
+        -112
       ],
       "id": "b6b13f8b-28fe-487f-b65d-8351f1c91648",
-      "name": "Respond to Webhook"
+      "name": "Respond - Updated"
     },
     {
       "parameters": {
-        "content": "## What it does:\nThis workflow is built for updating your linux system with a single API Request which can be automated in web interfaces or shortcut app...\n## Setup:\nAdd your credentials for basic auth and ssh\nCopy the custom webhook url and get started!\nExample:\n``` curl\ncurl -X POST -u \"username:password\" https://<your-domain>/update\n```\n## Info:\nThis workflow is built only for debian based systems but i think it is not too hard to change for your needs ;-)",
-        "height": 352,
-        "width": 672
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6e7c07c1-5a2e-46de-b0f6-33197d9724a3",
+              "leftValue": "={{ $json.code === 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "af3f95c5-bfd4-4ab7-8682-d9afc24aaf4f",
+      "name": "Succeeded?"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ 'Update failed (exit code ' + $json.code + ')\\n' + $json.stderr }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        80
+      ],
+      "id": "e78bd4fa-08a9-41b5-88d8-4da4a0010710",
+      "name": "Respond - Failed"
+    },
+    {
+      "parameters": {
+        "content": "## What it does:\nThis workflow is built for updating your linux system with a single API Request which can be automated in web interfaces or shortcut app...\n## Setup:\nAdd your credentials for basic auth and ssh\nGive the SSH user passwordless sudo for **only** the two apt-get commands this workflow runs (don't use `NOPASSWD: ALL`). Run `sudo visudo -f /etc/sudoers.d/n8n-update` and add this line, replacing `youruser`:\n```\nyouruser ALL=(root) NOPASSWD: /usr/bin/apt-get -o DPkg\\:\\:Lock\\:\\:Timeout\\=300 update, /usr/bin/apt-get -o DPkg\\:\\:Lock\\:\\:Timeout\\=300 -o Dpkg\\:\\:Options\\:\\:\\=--force-confdef -o Dpkg\\:\\:Options\\:\\:\\=--force-confold -y --with-new-pkgs upgrade\n```\nIf you change the command in the SSH node, update this rule to match exactly.\nCopy the custom webhook url and get started!\nExample:\n``` curl\ncurl -X POST -u \"username:password\" https://<your-domain>/webhook/update\n```\n## Responses:\n- `200` with the apt output when the update succeeds\n- `500` with the error output when it fails (e.g. sudo isn't set up, or another apt process holds the lock for more than 5 minutes)\n## Info:\nThis workflow is built only for debian based systems but i think it is not too hard to change for your needs ;-)\nLocally modified config files are kept during upgrades (`--force-confold`).",
+        "height": 688,
+        "width": 880
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -32,
-        -384
+        -720
       ],
       "id": "01a69511-2a7a-41e5-b709-9f3731530402",
       "name": "Sticky Note"
@@ -94,7 +145,25 @@
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Respond - Updated",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Failed",
             "type": "main",
             "index": 0
           }
