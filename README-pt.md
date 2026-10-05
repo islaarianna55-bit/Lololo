@@ -500,7 +500,7 @@ Explore 39 templates de pesquisa com IA, RAG e analise de dados para n8n -- a ma
 
 ### Outros
 
-- `ALL_unique_nodes.txt` -- Referencia completa de nos listando todos os nos unicos do n8n usados nestes templates.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Referencia completa de nos listando todos os nos unicos do n8n usados nestes templates.
 
 ---
 

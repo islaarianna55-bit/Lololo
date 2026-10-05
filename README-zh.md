@@ -500,7 +500,7 @@
 
 ### 其他
 
-- `ALL_unique_nodes.txt` -- 完整的节点参考，列出了这些模板中使用的所有唯一 n8n 节点。
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- 完整的节点参考，列出了这些模板中使用的所有唯一 n8n 节点。
 
 ---
 

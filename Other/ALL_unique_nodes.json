@@ -1,0 +1,846 @@
+{
+  "description": "All unique n8n node types used across the templates in this repository, with the number of templates using each.",
+  "total": 210,
+  "nodes": [
+    {
+      "type": "@apify/n8n-nodes-apify.apify",
+      "templates": 3
+    },
+    {
+      "type": "@cradl/n8n-nodes-cradlai.cradlAi",
+      "templates": 1
+    },
+    {
+      "type": "@gladiator1st/n8n-nodes-magichour.magicHour",
+      "templates": 3
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "templates": 112
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "templates": 63
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "templates": 9
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "templates": 12
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "templates": 54
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.code",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.documentBinaryInputLoader",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "templates": 34
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.documentJsonInputLoader",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "templates": 5
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.embeddingsMistralCloud",
+      "templates": 4
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "templates": 25
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "templates": 18
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "templates": 5
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "templates": 25
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "templates": 6
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "templates": 4
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "templates": 8
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "templates": 143
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "templates": 4
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "templates": 2
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmOpenAi",
+      "templates": 2
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.manualChatTrigger",
+      "templates": 6
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "templates": 58
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.memoryManager",
+      "templates": 4
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "templates": 5
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "templates": 67
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.openAiAssistant",
+      "templates": 2
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "templates": 10
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.outputParserItemList",
+      "templates": 2
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "templates": 46
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "templates": 8
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.retrieverWorkflow",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "templates": 2
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "templates": 14
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "templates": 27
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
+      "templates": 11
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "templates": 6
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "templates": 4
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "templates": 12
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "templates": 3
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "templates": 9
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "templates": 11
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "templates": 30
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "templates": 3
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "templates": 1
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "templates": 9
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "templates": 16
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "templates": 6
+    },
+    {
+      "type": "n8n-nodes-base.aggregate",
+      "templates": 37
+    },
+    {
+      "type": "n8n-nodes-base.airtable",
+      "templates": 24
+    },
+    {
+      "type": "n8n-nodes-base.airtableTool",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.airtableTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.awsComprehend",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.bambooHr",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.bannerbear",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.baserow",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.baserowTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.clickUp",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.code",
+      "templates": 141
+    },
+    {
+      "type": "n8n-nodes-base.compression",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.convertToFile",
+      "templates": 12
+    },
+    {
+      "type": "n8n-nodes-base.cron",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.crypto",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.dataTable",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.dataTableTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.dateTime",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.dhl",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.discord",
+      "templates": 5
+    },
+    {
+      "type": "n8n-nodes-base.dropbox",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.editImage",
+      "templates": 11
+    },
+    {
+      "type": "n8n-nodes-base.elasticsearch",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.emailReadImap",
+      "templates": 7
+    },
+    {
+      "type": "n8n-nodes-base.emailSend",
+      "templates": 12
+    },
+    {
+      "type": "n8n-nodes-base.erpNext",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.errorTrigger",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.executeCommand",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.executeWorkflow",
+      "templates": 14
+    },
+    {
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "templates": 44
+    },
+    {
+      "type": "n8n-nodes-base.executionData",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.extractFromFile",
+      "templates": 31
+    },
+    {
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.filter",
+      "templates": 32
+    },
+    {
+      "type": "n8n-nodes-base.form",
+      "templates": 9
+    },
+    {
+      "type": "n8n-nodes-base.formTrigger",
+      "templates": 23
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.functionItem",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.github",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.gmail",
+      "templates": 31
+    },
+    {
+      "type": "n8n-nodes-base.gmailTool",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.gmailTrigger",
+      "templates": 16
+    },
+    {
+      "type": "n8n-nodes-base.googleAnalytics",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.googleAnalyticsTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.googleCalendar",
+      "templates": 5
+    },
+    {
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "templates": 6
+    },
+    {
+      "type": "n8n-nodes-base.googleCloudNaturalLanguage",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.googleDocs",
+      "templates": 5
+    },
+    {
+      "type": "n8n-nodes-base.googleDocsTool",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.googleDrive",
+      "templates": 39
+    },
+    {
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.googlePerspective",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.googleSheets",
+      "templates": 51
+    },
+    {
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.graphql",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.hackerNews",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.html",
+      "templates": 24
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "templates": 209
+    },
+    {
+      "type": "n8n-nodes-base.httpRequestTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.hubspot",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.humanticAi",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.if",
+      "templates": 113
+    },
+    {
+      "type": "n8n-nodes-base.interval",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.itemLists",
+      "templates": 5
+    },
+    {
+      "type": "n8n-nodes-base.jira",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.jiraTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.lemlist",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.lemlistTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.limit",
+      "templates": 17
+    },
+    {
+      "type": "n8n-nodes-base.linear",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.linearTrigger",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.linkedIn",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.localFileTrigger",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.manualTrigger",
+      "templates": 125
+    },
+    {
+      "type": "n8n-nodes-base.markdown",
+      "templates": 21
+    },
+    {
+      "type": "n8n-nodes-base.mattermost",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.merge",
+      "templates": 70
+    },
+    {
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "templates": 6
+    },
+    {
+      "type": "n8n-nodes-base.microsoftOutlookTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.mondayCom",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.mongoDb",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.mongoDbTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.moveBinaryData",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.mySql",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.mySqlTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.n8n",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.noOp",
+      "templates": 38
+    },
+    {
+      "type": "n8n-nodes-base.nocoDb",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.notion",
+      "templates": 11
+    },
+    {
+      "type": "n8n-nodes-base.notionTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.notionTrigger",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.openAi",
+      "templates": 21
+    },
+    {
+      "type": "n8n-nodes-base.pipedrive",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.pipedriveTrigger",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.postgres",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.postgresTool",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.quickChart",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.readBinaryFile",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.readPDF",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.readWriteFile",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.reddit",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.redis",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.removeDuplicates",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.respondToWebhook",
+      "templates": 55
+    },
+    {
+      "type": "n8n-nodes-base.rssFeedRead",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.s3",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "templates": 61
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "templates": 215
+    },
+    {
+      "type": "n8n-nodes-base.slack",
+      "templates": 20
+    },
+    {
+      "type": "n8n-nodes-base.sort",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.splitInBatches",
+      "templates": 40
+    },
+    {
+      "type": "n8n-nodes-base.splitOut",
+      "templates": 63
+    },
+    {
+      "type": "n8n-nodes-base.spotify",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.ssh",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.start",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.stickyNote",
+      "templates": 313
+    },
+    {
+      "type": "n8n-nodes-base.stopAndError",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.strapi",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.stravaTrigger",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.summarize",
+      "templates": 6
+    },
+    {
+      "type": "n8n-nodes-base.supabase",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.switch",
+      "templates": 56
+    },
+    {
+      "type": "n8n-nodes-base.telegram",
+      "templates": 42
+    },
+    {
+      "type": "n8n-nodes-base.telegramTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.telegramTrigger",
+      "templates": 23
+    },
+    {
+      "type": "n8n-nodes-base.todoist",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.trello",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.twilio",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.twilioTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.twitter",
+      "templates": 6
+    },
+    {
+      "type": "n8n-nodes-base.typeformTrigger",
+      "templates": 3
+    },
+    {
+      "type": "n8n-nodes-base.venafiTlsProtectCloud",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.wait",
+      "templates": 28
+    },
+    {
+      "type": "n8n-nodes-base.webflow",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.webhook",
+      "templates": 79
+    },
+    {
+      "type": "n8n-nodes-base.whatsApp",
+      "templates": 7
+    },
+    {
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.wooCommerce",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.wooCommerceTool",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.wordpress",
+      "templates": 8
+    },
+    {
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "templates": 2
+    },
+    {
+      "type": "n8n-nodes-base.youTube",
+      "templates": 4
+    },
+    {
+      "type": "n8n-nodes-base.zendesk",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-base.zoom",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-fiwano.fiwano",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-fiwano.fiwanoTrigger",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-gcf.gcf",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-pdfmint.pdfMint",
+      "templates": 1
+    },
+    {
+      "type": "n8n-nodes-youtube-transcription.youtubeTranscripter",
+      "templates": 1
+    }
+  ]
+}

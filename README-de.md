@@ -500,7 +500,7 @@ Entdecke 39 Vorlagen fuer KI-Forschung, RAG und Datenanalyse fuer n8n -- die gro
 
 ### Sonstiges
 
-- `ALL_unique_nodes.txt` -- Vollstaendige Node-Referenz mit allen einzigartigen n8n-Nodes, die in diesen Vorlagen verwendet werden.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Vollstaendige Node-Referenz mit allen einzigartigen n8n-Nodes, die in diesen Vorlagen verwendet werden.
 
 ---
 

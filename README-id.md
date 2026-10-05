@@ -500,7 +500,7 @@ Jelajahi 39 template riset AI, RAG, dan analisis data untuk n8n -- kategori terb
 
 ### Lainnya
 
-- `ALL_unique_nodes.txt` -- Referensi node lengkap yang mencantumkan semua node n8n unik yang digunakan di seluruh template ini.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Referensi node lengkap yang mencantumkan semua node n8n unik yang digunakan di seluruh template ini.
 
 ---
 

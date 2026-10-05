@@ -500,7 +500,7 @@ Explora 39 plantillas de investigacion con IA, RAG y analisis de datos para n8n 
 
 ### Otros
 
-- `ALL_unique_nodes.txt` -- Referencia completa de nodos que lista todos los nodos unicos de n8n utilizados en estas plantillas.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Referencia completa de nodos que lista todos los nodos unicos de n8n utilizados en estas plantillas.
 
 ---
 

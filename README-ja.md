@@ -500,7 +500,7 @@ Instagram、Twitter/X、Reddit、YouTube、LinkedInなどをカバーする10種
 
 ### その他
 
-- `ALL_unique_nodes.txt` -- これらのテンプレート全体で使用されているすべてのユニークなn8nノードを網羅したノードリファレンス。
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- これらのテンプレート全体で使用されているすべてのユニークなn8nノードを網羅したノードリファレンス。
 
 ---
 

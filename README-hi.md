@@ -500,7 +500,7 @@ Forms aur surveys ke liye 3 automation templates. AI-powered conversational inte
 
 ### Anya
 
-- `ALL_unique_nodes.txt` -- Sabhi unique n8n nodes ki poori reference list jo in templates mein use hui hain.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Sabhi unique n8n nodes ki poori reference list jo in templates mein use hui hain.
 
 ---
 

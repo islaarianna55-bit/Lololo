@@ -500,7 +500,7 @@ Instagram, Twitter/X, Reddit, YouTube, LinkedIn 등을 지원하는 10개의 소
 
 ### 기타
 
-- `ALL_unique_nodes.txt` -- 이 템플릿에서 사용되는 모든 고유 n8n 노드를 나열한 전체 노드 참조 파일입니다.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- 이 템플릿에서 사용되는 모든 고유 n8n 노드를 나열한 전체 노드 참조 파일입니다.
 
 ---
 

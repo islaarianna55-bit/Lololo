@@ -500,7 +500,7 @@ Esplora 39 template di ricerca AI, RAG e analisi dati per n8n -- la categoria pi
 
 ### Altro
 
-- `ALL_unique_nodes.txt` -- Riferimento completo dei nodi che elenca tutti i nodi n8n unici utilizzati in questi template.
+- [`ALL_unique_nodes.json`](Other/ALL_unique_nodes.json) -- Riferimento completo dei nodi che elenca tutti i nodi n8n unici utilizzati in questi template.
 
 ---
 
