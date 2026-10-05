@@ -32,7 +32,7 @@
 120
 ],
 "parameters": {
-"command": "=ls -p {{ $json.directory }} | grep -v / || true; \\\necho \"===\"; \\\nls -p {{ $json.directory }} | grep / || true;"
+"command": "=dir='{{ $json.directory.replaceAll(\"'\", \"'\\\\''\") }}'; \\\nls -p -- \"$dir\" | grep -v / || true; \\\necho \"===\"; \\\nls -p -- \"$dir\" | grep / || true;"
 },
 "typeVersion": 1
 },
@@ -123,15 +123,28 @@
 "typeVersion": 3.3
 },
 {
+"parameters": {
+"jsCode": "// File and folder names can contain anything, including shell syntax, so every\n// value is single-quoted, folders are validated, and only files we listed are moved.\nconst q = (s) => \"'\" + String(s).replace(/'/g, `'\\\\''`) + \"'\";\nconst directory = $('Set Variables').first().json.directory.replace(/\\/+$/, '');\nconst listed = $('Files and Folders to Array').first().json;\nconst files = new Set(listed.files);\nconst folders = new Set(listed.folders.map((f) => f.replace(/\\/$/, '')));\nconst safeFolder = /^[A-Za-z0-9][A-Za-z0-9 _.-]{0,63}$/;\nconst moved = new Set();\nconst out = [];\n\nfor (const item of $input.all()) {\n  let folder = String(item.json.folder ?? '').trim();\n  if (!folders.has(folder) && !safeFolder.test(folder)) folder = 'misc';\n  const toMove = (item.json.files ?? []).filter((f) => files.has(f) && !moved.has(f));\n  if (!toMove.length) continue;\n  toMove.forEach((f) => moved.add(f));\n\n  const dest = `${directory}/${folder}`;\n  const lines = [`mkdir -p -- ${q(dest)} || exit 1`];\n  for (const f of toMove) {\n    const dot = f.lastIndexOf('.');\n    const [base, ext] = dot > 0 ? [f.slice(0, dot), f.slice(dot)] : [f, ''];\n    lines.push(\n      `src=${q(`${directory}/${f}`)}; base=${q(`${dest}/${base}`)}; ext=${q(ext)}`,\n      // If the subdirectory already has a file with this name, add a number: report-1.pdf, report-2.pdf, ...\n      'target=\"$base$ext\"; n=1',\n      'while [ -e \"$target\" ]; do target=\"$base-$n$ext\"; n=$((n+1)); done',\n      'mv -n -- \"$src\" \"$target\"',\n    );\n  }\n  out.push({ json: { folder, files: toMove, command: lines.join('\\n') } });\n}\n\nreturn out;"
+},
+"type": "n8n-nodes-base.code",
+"typeVersion": 2,
+"position": [
+2400,
+80
+],
+"id": "be1553bf-181b-456f-aced-b772f4f107cd",
+"name": "Build Safe Move Commands"
+},
+{
 "id": "457bfd30-5cca-417a-88d3-666afe567fd5",
 "name": "Move Files into Folders",
 "type": "n8n-nodes-base.executeCommand",
 "position": [
-2560,
-140
+2600,
+80
 ],
 "parameters": {
-"command": "=directory=\"{{ $('Set Variables').item.json.directory }}\"\nsubdirectory=\"$directory/{{ $json.folder }}\";\nfile_list=\"{{ $json.files.join(' ') }}\";\n\n# create subdirectory if not exists\nmkdir -p $subdirectory;\n\n# for each suggestion, move the file into the subdirectory.\n# If the file in the subdirectory exists, then we'll rename the current file by adding a small random string to the end of the filename.\nfor filename in $file_list; do\n if [ -e \"$subdirectory/$filename\" ]; then\n mv \"$directory/$filename-$RANDOM\" -t $subdirectory;\n else\n mv \"$directory/$filename\" -t $subdirectory;\n fi\ndone",
+"command": "={{ $json.command }}",
 "executeOnce": false
 },
 "typeVersion": 1
@@ -241,9 +254,9 @@
 ],
 "parameters": {
 "color": 7,
-"width": 401.0065589583014,
+"width": 440,
 "height": 374.8503908496576,
-"content": "## Step 4. Move the files into subdirectories\n[Read more about Execute Command node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand)\n\nFor this step, we'll use the execute command node to execute a shellscript to move the files into their respective subdirectories."
+"content": "## Step 4. Move the files into subdirectories\n[Read more about Execute Command node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand)\n\nFor this step, we'll use the execute command node to execute a shellscript to move the files into their respective subdirectories.\n\nFile names and AI suggestions are untrusted: the code node only moves files that were actually listed, replaces unsafe folder names with `misc`, and single-quotes every value before it reaches the shell."
 },
 "typeVersion": 1
 },
@@ -287,7 +300,7 @@
 80
 ],
 "parameters": {
-"text": "=Here is the list of current files in the directory:\n{{ $json.files.map(file => `* ${file}`).join('\\n') }}\n\nHere is the list of current folders in the directory:\n{{ $json.folders.length ? $json.folders.map(item => `* ${item}`).join('\\n') : 'There are currently no directories' }}\n\nGroup the current files using the filename as a hint and decide which of the current folders should they be moved to. If there are no current folders, then suggest a folder to be created.\n\nIf you can't decide which folder to put the file in, the file should be moved to the misc folder.",
+"text": "=Here is the list of current files in the directory:\n{{ $json.files.map(file => `* ${file}`).join('\\n') }}\n\nHere is the list of current folders in the directory:\n{{ $json.folders.length ? $json.folders.map(item => `* ${item}`).join('\\n') : 'There are currently no directories' }}\n\nGroup the current files using the filename as a hint and decide which of the current folders should they be moved to. If there are no current folders, then suggest a folder to be created.\n\nIf you can't decide which folder to put the file in, the file should be moved to the misc folder.\n\nOnly use filenames exactly as they appear in the list above. Folder names may only contain letters, numbers, spaces, dots, dashes and underscores.",
 "messages": {
 "messageValues": [
 {
@@ -362,7 +375,7 @@
 "main": [
 [
 {
-"node": "Move Files into Folders",
+"node": "Build Safe Move Commands",
 "type": "main",
 "index": 0
 }
@@ -396,6 +409,17 @@
 [
 {
 "node": "If Has Target Files...",
+"type": "main",
+"index": 0
+}
+]
+]
+},
+"Build Safe Move Commands": {
+"main": [
+[
+{
+"node": "Move Files into Folders",
 "type": "main",
 "index": 0
 }
