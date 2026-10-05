@@ -600,7 +600,7 @@
 1900
 ],
 "parameters": {
-"html": "> File: {{ $json.params.file }}"
+"html": "> File: `{{ $json.params.file.replace(/[^A-Za-z0-9._ -]/g, '') }}`"
 },
 "typeVersion": 1.2
 },
@@ -1138,10 +1138,10 @@
 "id": "c1c1aecc-8faa-47ea-b831-4674c3c0db61",
 "operator": {
 "type": "string",
-"operation": "contains"
+"operation": "regex"
 },
 "leftValue": "={{ $json.params.file }}",
-"rightValue": "docs_"
+"rightValue": "^docs_[A-Za-z0-9]{1,64}\\.md$"
 }
 ]
 },
@@ -1266,7 +1266,7 @@
 "color": 6,
 "width": 4161.578473434268,
 "height": 1142.0268674813442,
-"content": "# Main functionality here\n\n## * View existing documentation\n## * Auto-generate doc page if no file available\n## * Re-created autodoc page\n## * Edit doc page: LIVE Markdown editor included!\n## * Save edited file. WARNING! No authentication"
+"content": "# Main functionality here\n\n## * View existing documentation\n## * Auto-generate doc page if no file available\n## * Re-created autodoc page\n## * Edit doc page: LIVE Markdown editor included!\n## * Save edited file. WARNING! No authentication\n\nOnly `docs_<workflowId>.md` file names are read or written; anything else gets the fallback response"
 },
 "typeVersion": 1
 },
