@@ -525,7 +525,7 @@ This section contains 5 form and survey automation templates for n8n. Conduct AI
 
 ### What n8n templates exist for AI research, RAG, and data analysis?
 
-Explore 39 AI research, RAG, and data analysis templates for n8n -- the largest category in this collection. Templates cover deep research agents with Apify and OpenAI, autonomous web crawlers, RAG chatbots with Qdrant and Pinecone, TradingView chart analysis, Hugging Face paper summarization, financial document assistants, SEO keyword generation, sentiment analysis, visual regression testing, and vector database analysis for anomaly detection and KNN classification.
+Explore 40 AI research, RAG, and data analysis templates for n8n -- the largest category in this collection. Templates cover deep research agents with Apify and OpenAI, autonomous web crawlers, RAG chatbots with Qdrant and Pinecone, TradingView chart analysis, Hugging Face paper summarization, financial document assistants, SEO keyword generation, sentiment analysis, visual regression testing, and vector database analysis for anomaly detection and KNN classification.
 
 | Workflow Title | Description | Department | Link to Template |
 |---|---|---|---|
@@ -572,6 +572,7 @@ Explore 39 AI research, RAG, and data analysis templates for n8n -- the largest 
 | DataForge Lite - AI URL Data Extractor | POST any URL and extract structured data using OpenAI. Returns clean JSON output for easy integration with other workflows. | Data Extraction, AI Research | [Link to Template](AI_Research_RAG_and_Data_Analysis/DataForge%20Lite%20-%20AI%20URL%20Data%20Extractor.json) |
 | 🔍 Perplexity Research to HTML: AI-Powered Content Creation | Transforms Perplexity AI research into HTML content for AI-powered content creation. | Content Creation, AI Research | [Link to Template](./AI_Research_RAG_and_Data_Analysis/%F0%9F%94%8D%20Perplexity%20Research%20to%20HTML_%20AI-Powered%20Content%20Creation.json) |
 | Live Web Research Agent with Superhighway | Search the live web, get AI-ready results (title, URL, snippet) using Superhighway's free search API. No browser required — pure HTTP. | Research | [Link to Template](AI_Research_RAG_and_Data_Analysis/Live%20Web%20Research%20Agent%20with%20Superhighway.json) |
+| New podcast episodes to transcript, summary and translated SRT subtitles (Apify) | Checks a podcast RSS feed every morning, transcribes only new episodes with the Apify Audio Transcriber (Whisper), and returns the transcript, a summary and SRT subtitles in the languages you choose. | Content, Marketing | [Link to Template](./AI_Research_RAG_and_Data_Analysis/New%20podcast%20episodes%20to%20transcript%2C%20summary%20and%20translated%20SRT%20subtitles%20(Apify).json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
