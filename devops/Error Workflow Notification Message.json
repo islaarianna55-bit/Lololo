@@ -1,0 +1,99 @@
+{
+  "name": "Vorlage 03: Error-Workflow mit Meldungstext",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1b4e593d-f143-4f69-81f9-45164fe8074c",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1db89183-46bb-4f8d-8ddf-3c8ca367be50",
+              "name": "workflow",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "faf124ce-1c5a-4d0d-ad9f-ab26de73b588",
+              "name": "letzter_node",
+              "value": "={{ $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            },
+            {
+              "id": "f70e912d-6f68-420e-9f05-df708629cbdf",
+              "name": "fehler",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "587f13f9-53d1-4f19-846f-725979689d3a",
+              "name": "ausfuehrung",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "4390dda1-eca8-4ee6-90fa-0c3e83a6968f",
+      "name": "Meldung bauen",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "47933b6b-5530-4018-88e9-dbd3de2658c1",
+      "name": "Hier Mail- oder Chat-Node einsetzen",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Meldung bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meldung bauen": {
+      "main": [
+        [
+          {
+            "node": "Hier Mail- oder Chat-Node einsetzen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
