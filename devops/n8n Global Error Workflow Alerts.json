@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "name": "n8n Failure Alerts (Global Error Workflow)",
+  "tags": [],
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## n8n Failure Alerts (Global Error Workflow)\n\n### How it works\n\nn8n can run one dedicated workflow whenever any other workflow fails. This template is that workflow. It receives the failed execution, extracts the workflow name, the failing node, the error message, the run mode and the execution link, then posts the result to a Slack-compatible webhook.\n\n### Setup steps\n\n1. Import this file into n8n.\n2. Open **Send Alert** and replace the placeholder URL with your Slack (or Discord / Teams compatible) webhook URL.\n3. Open any workflow you want to monitor, go to **Settings -> Error Workflow** and select this workflow.\n4. Run a workflow with a deliberately broken step to confirm the alert arrives.\n\n### Customization\n\n- Add or remove fields in **Build Alert** (for example attempt count, affected customer ID, environment).\n- Swap the webhook for email, Telegram, PagerDuty or any HTTP endpoint.\n\n### Notes\n\n- Error workflows fire only when an execution actually errors. A workflow that quietly stops running needs a heartbeat check instead.\n- Keep alert payloads small and never include credentials or raw personal data.",
+        "width": 560,
+        "height": 700
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -120
+      ],
+      "id": "b1a00000-0000-4000-8000-000000000001",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Catch the failure\n\nThis workflow is meant to be selected as the **Error Workflow** of your other workflows. The Error Trigger fires once for every failed execution.",
+        "width": 320,
+        "height": 280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        -160
+      ],
+      "id": "b1a00000-0000-4000-8000-000000000002",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Format and send the alert\n\n**Build Alert** turns the raw failure payload into a short readable message. **Send Alert** posts it to your webhook.",
+        "width": 720,
+        "height": 280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        -160
+      ],
+      "id": "b1a00000-0000-4000-8000-000000000003",
+      "name": "Sticky Note2"
+    },
+    {
+      "id": "b1a00000-0000-4000-8000-000000000010",
+      "name": "On Workflow Failure",
+      "type": "n8n-nodes-base.errorTrigger",
+      "position": [
+        -280,
+        0
+      ],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "b1a00000-0000-4000-8000-000000000011",
+      "name": "Build Alert",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        120,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Build a readable alert from the failed execution that n8n passes to an Error Trigger.\nconst input = $input.first().json;\n\nconst workflow = input.workflow || {};\nconst execution = input.execution || {};\nconst error = execution.error || {};\nconst failedNode = error.node || {};\n\nconst wfName = workflow.name || 'unknown workflow';\nconst nodeName = failedNode.name || execution.lastNodeExecuted || 'unknown node';\nconst errMsg = error.message || error.description || 'unknown error';\nconst execUrl = execution.url || null;\n\nconst lines = [\n  '\\u{1F534} n8n workflow failed',\n  '',\n  'Workflow: ' + wfName,\n  'Failed node: ' + nodeName,\n  'Error: ' + errMsg,\n  'Run mode: ' + (execution.mode || 'unknown'),\n  'Started: ' + (execution.startedAt || execution.createdAt || 'unknown'),\n  'Execution: ' + (execUrl || '(open Executions in n8n)'),\n];\n\nreturn [{\n  json: {\n    severity: 'error',\n    workflow: wfName,\n    failedNode: nodeName,\n    errorMessage: errMsg,\n    mode: execution.mode || null,\n    executionUrl: execUrl,\n    message: lines.join('\\n'),\n  },\n}];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "b1a00000-0000-4000-8000-000000000012",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/WITH/YOUR/WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.message }) }}",
+        "options": {}
+      },
+      "typeVersion": 4.2
+    }
+  ],
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b1a00000-1000-4000-8000-000000000001",
+  "connections": {
+    "On Workflow Failure": {
+      "main": [
+        [
+          {
+            "node": "Build Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
