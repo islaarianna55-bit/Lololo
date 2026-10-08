@@ -1,0 +1,248 @@
+{
+  "name": "Extract YouTube and TikTok transcripts to clean text with Apify",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e33e8f32-475c-4a0b-9396-d464c5531bc6",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c054efa4-1a6f-4b10-b8d6-c35940546cae",
+              "name": "urls",
+              "value": "={{ [\n  'https://www.youtube.com/watch?v=aircAruvnKk',\n  'https://www.tiktok.com/t/ZTyXc9cpY/'\n] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1cffdf8d-3d4d-4665-999c-eaa77b865f0c",
+      "name": "Set video links",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split the URL list by platform so each Apify Actor is called once with a batch.\nconst urls = $input.first().json.urls.map(u => String(u).trim()).filter(Boolean);\nconst isTikTok = u => /tiktok\\.com/i.test(u);\nconst out = [];\nconst youtube = urls.filter(u => !isTikTok(u));\nconst tiktok = urls.filter(isTikTok);\nif (youtube.length) out.push({ json: { platform: 'youtube', actor: 'tubetext~youtube-transcript-fast', input: { urls: youtube, aiFallback: true } } });\nif (tiktok.length) out.push({ json: { platform: 'tiktok', actor: 'tubetext~tiktok-transcript', input: { urls: tiktok } } });\nreturn out;"
+      },
+      "id": "aa3f2a4b-2ae6-4a37-abf2-e1340f49efb0",
+      "name": "Split links by platform",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/{{ $json.actor }}/run-sync-get-dataset-items?timeout=300",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.input) }}",
+        "options": {
+          "timeout": 310000
+        }
+      },
+      "id": "bd45887c-9f72-4113-9b83-9299a3ff2e31",
+      "name": "Get transcripts from Apify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Apify API token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cea04c56-1f9c-471f-8db9-144cbe8ca862",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "7690b13d-caa9-4a27-8827-82885fc8b339",
+              "name": "url",
+              "value": "={{ $json.url || $json.input }}",
+              "type": "string"
+            },
+            {
+              "id": "b353d5b1-3b86-445f-b1bc-d9b5fcee3db7",
+              "name": "title",
+              "value": "={{ $json.title || $json.description || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "125b8bab-beb5-457b-b237-24c52f033282",
+              "name": "author",
+              "value": "={{ $json.channelName || $json.authorUsername || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "78e8aea4-87c3-4050-8dad-e24d1f49083d",
+              "name": "source",
+              "value": "={{ $json.source || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "858f3d0f-85c8-4db1-b067-4a018578246b",
+              "name": "wordCount",
+              "value": "={{ $json.wordCount || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "7e54be25-2257-4d9b-8a6c-2518b587f86e",
+              "name": "transcript",
+              "value": "={{ $json.transcript || $json.error || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "513c93ef-864e-4019-b2d5-d4bbaf063319",
+      "name": "Format transcript fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Extract YouTube and TikTok transcripts to clean text\n\nPaste a mixed list of YouTube and TikTok links and get one clean row per video: title, author, word count and the full transcript. Use it as the first step for summaries, blog posts, newsletters or a RAG knowledge base.\n\n### How it works\n1. **Set video links** holds your list. YouTube videos, Shorts, playlists, whole channels (`https://www.youtube.com/@handle`) and TikTok links (including `tiktok.com/t/...` share links) can be mixed.\n2. **Split links by platform** groups the links so each platform is one batch request.\n3. **Get transcripts from Apify** calls two Apify Actors synchronously (no polling). YouTube videos without captions are transcribed with Whisper (`aiFallback: true`).\n4. **Format transcript fields** returns `status, url, title, author, source, wordCount, transcript`. Private, deleted or music-only videos come back as `no_transcript`.\n\n### Setup steps (2 min)\n1. Create an Apify account and copy your API token (Console > Settings > API & Integrations).\n2. Open **Get transcripts from Apify** and create a *Header Auth* credential: Name `Authorization`, Value `Bearer <your token>`.\n3. Replace the example links in **Set video links** and click *Execute workflow*.\n\n### Customization\nConnect the last node to an AI model (summaries, hooks), Google Sheets (one row per video) or a vector store.\n\n*Disclosure: I maintain both Apify Actors used here.*",
+        "height": 760,
+        "width": 560
+      },
+      "name": "Template overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Add your links\nEdit the list in **Set video links**. YouTube and TikTok links can be mixed.",
+        "height": 360,
+        "width": 460,
+        "color": 7
+      },
+      "name": "Step 1 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Fetch transcripts\nOne Apify call per platform. Add your Apify token as a Header Auth credential.",
+        "height": 360,
+        "width": 460,
+        "color": 7
+      },
+      "name": "Step 2 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Clean output\nOne item per video. Failed or unavailable videos are marked `no_transcript`.",
+        "height": 360,
+        "width": 300,
+        "color": 7
+      },
+      "name": "Step 3 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        920,
+        -180
+      ]
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Set video links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set video links": {
+      "main": [
+        [
+          {
+            "node": "Split links by platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split links by platform": {
+      "main": [
+        [
+          {
+            "node": "Get transcripts from Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get transcripts from Apify": {
+      "main": [
+        [
+          {
+            "node": "Format transcript fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
