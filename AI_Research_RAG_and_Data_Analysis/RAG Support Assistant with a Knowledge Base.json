@@ -1,0 +1,153 @@
+{
+  "name": "RAG Support Assistant with a Knowledge Base",
+  "nodes": [
+    {
+      "id": "01b84a00-920d-48d1-bd89-f422eda17ff0",
+      "name": "Customer Question (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-ask",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "ef04bc83-c300-4219-b033-556eeb7787af",
+      "name": "Build Prompt with Knowledge Base",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        112
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rag-question",
+              "name": "question",
+              "value": "={{ $json.body.question || \"How can I contact you?\" }}",
+              "type": "string"
+            },
+            {
+              "id": "rag-prompt",
+              "name": "prompt",
+              "value": "={{ \"You are the customer support assistant of the company. Answer strictly from the knowledge base, briefly and politely. If the answer is not in the knowledge base, offer to pass the question to a human manager.\\n\\nKNOWLEDGE BASE:\\n1. Delivery — 1-2 days in the city, 3-7 days nationwide. Free courier from 5,000.\\n2. Payment: card, bank transfer, invoice for companies. 50% prepayment for companies.\\n3. Returns within 14 days if the item is unopened.\\n4. 12 months warranty, service at the warehouse address.\\n5. Contact a manager: website chat or support@example.com.\\n\\nCUSTOMER QUESTION: \" + $json.body.question }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "563c8838-c077-4e03-82bf-d30d397f6159",
+      "name": "Answer from Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        112
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}"
+      }
+    },
+    {
+      "id": "c851f737-6881-4602-94a3-cfaccb2a55ad",
+      "name": "GPT Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        336
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "7dee2734-45c8-4841-a2fc-fc64267cb20c",
+      "name": "Response: Assistant Answer",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        112
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, question: $(\"Build Prompt with Knowledge Base\").item.json.question, answer: $json.text } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Customer Question (POST)": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt with Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt with Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Answer from Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer from Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Response: Assistant Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer from Knowledge Base",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}

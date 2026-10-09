@@ -1,0 +1,518 @@
+{
+  "name": "AI Lead Intake and Qualification from Any Channel",
+  "nodes": [
+    {
+      "id": "739ad876-507e-447d-bdb7-723bd18751c7",
+      "name": "Lead Intake Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        80
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "168d69ab-e69f-4f81-b673-b7dbac287714",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        80
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-base-url",
+              "name": "llm_base_url",
+              "value": "https://api.openai.com/v1",
+              "type": "string"
+            },
+            {
+              "id": "cfg-model",
+              "name": "llm_model",
+              "value": "gpt-4o-mini",
+              "type": "string"
+            },
+            {
+              "id": "cfg-crm-url",
+              "name": "crm_url",
+              "value": "<__PLACEHOLDER_VALUE__URL of your CRM intake endpoint (Bitrix24 webhook / Google Sheets / Airtable)__>",
+              "type": "string"
+            },
+            {
+              "id": "cfg-chat",
+              "name": "manager_chat_id",
+              "value": "REPLACE_WITH_YOUR_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "620c5f56-561d-46af-a2b6-395b0b933717",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        80
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "norm-lead-id",
+              "name": "lead_id",
+              "value": "={{ 'L-' + $now.toFormat('yyyyMMdd-HHmmss') }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-channel",
+              "name": "channel",
+              "value": "={{ $json.body.channel || 'website' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-name",
+              "name": "name",
+              "value": "={{ $json.body.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-contact",
+              "name": "contact",
+              "value": "={{ $json.body.contact || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-message",
+              "name": "message",
+              "value": "={{ $json.body.message || $json.body.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-company",
+              "name": "company",
+              "value": "={{ $json.body.company || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-page",
+              "name": "page",
+              "value": "={{ $json.body.page || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-attachment",
+              "name": "attachment_url",
+              "value": "={{ $json.body.attachment_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "norm-received",
+              "name": "received_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6a12f3bf-d3de-4e7c-bf07-e44ca7ecef8e",
+      "name": "Has Attachment?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.attachment_url }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "837ffb7d-0409-4fc3-afb1-1de28c471d4e",
+      "name": "Extract Attachment Data (AI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').item.json.llm_base_url }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: $('Settings').item.json.llm_model, messages: [ { role: 'user', content: [ { type: 'text', text: 'Extract the lead details from the document: full name, phone, email, what the client needs, budget and deadline. Return a short bullet list and never invent values. If a field is missing, write \"not provided\".' }, { type: 'image_url', image_url: { url: $json.attachment_url } } ] } ] } }}",
+        "options": {
+          "response": {
+            "responseFormat": "json"
+          },
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ad639129-aa38-4e23-a9c1-8f3806a97e38",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        80
+      ],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "92db97e1-da13-4dad-9e3e-d597011ef639",
+      "name": "Build Lead Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        80
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "col-lead-id",
+              "name": "lead_id",
+              "value": "={{ $('Normalize Lead').item.json.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "col-channel",
+              "name": "channel",
+              "value": "={{ $('Normalize Lead').item.json.channel }}",
+              "type": "string"
+            },
+            {
+              "id": "col-name",
+              "name": "name",
+              "value": "={{ $('Normalize Lead').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "col-contact",
+              "name": "contact",
+              "value": "={{ $('Normalize Lead').item.json.contact }}",
+              "type": "string"
+            },
+            {
+              "id": "col-company",
+              "name": "company",
+              "value": "={{ $('Normalize Lead').item.json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "col-page",
+              "name": "page",
+              "value": "={{ $('Normalize Lead').item.json.page }}",
+              "type": "string"
+            },
+            {
+              "id": "col-attachment",
+              "name": "attachment_url",
+              "value": "={{ $('Normalize Lead').item.json.attachment_url }}",
+              "type": "string"
+            },
+            {
+              "id": "col-received",
+              "name": "received_at",
+              "value": "={{ $('Normalize Lead').item.json.received_at }}",
+              "type": "string"
+            },
+            {
+              "id": "col-text",
+              "name": "text",
+              "value": "={{ 'NEW LEAD\\nChannel: ' + $('Normalize Lead').item.json.channel + '\\nName: ' + $('Normalize Lead').item.json.name + '\\nContact: ' + $('Normalize Lead').item.json.contact + '\\nCompany: ' + $('Normalize Lead').item.json.company + '\\nPage: ' + $('Normalize Lead').item.json.page + '\\nMessage: ' + $('Normalize Lead').item.json.message + '\\n\\nDATA FROM ATTACHMENT:\\n' + ($json.choices ? $json.choices[0].message.content : 'no attachment') }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8b61eece-1d61-41f2-9b23-9b154453bacc",
+      "name": "Classify Lead (AI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        80
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').item.json.llm_base_url }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: $('Settings').item.json.llm_model, messages: [ { role: 'system', content: 'You are the lead intake assistant of an automation studio. Reply with one JSON object only, no explanations and no markdown. Fields: category (one of: consultation, order, documents, complaint, partnership), priority (high, medium or low), summary (1-2 sentences), what_needed (what the client asks for), missing (which data is missing), draft_reply (a polite draft answer to the client, 3 to 5 sentences, with one clarifying question), needs_human (true or false).' }, { role: 'user', content: $json.text } ] } }}",
+        "options": {
+          "response": {
+            "responseFormat": "json"
+          },
+          "timeout": 90000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "827c8623-3cd5-49a5-875f-75931f8e795d",
+      "name": "Lead Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const lead = $('Build Lead Text').first().json;\nconst raw = $input.first().json;\nconst content = raw && raw.choices && raw.choices[0] && raw.choices[0].message ? raw.choices[0].message.content : '';\nlet d = {};\ntry {\n  const m = String(content).match(/\\{[\\s\\S]*\\}/);\n  d = JSON.parse(m ? m[0] : content);\n} catch (e) {\n  d = { category: 'unclassified', priority: 'medium', summary: String(content), what_needed: '', missing: '', draft_reply: '', needs_human: true };\n}\nreturn [{ json: { lead_id: lead.lead_id, received_at: lead.received_at, channel: lead.channel, name: lead.name, contact: lead.contact, company: lead.company, page: lead.page, attachment_url: lead.attachment_url, category: d.category || 'unclassified', priority: d.priority || 'medium', summary: d.summary || '', what_needed: d.what_needed || '', missing: d.missing || '', draft_reply: d.draft_reply || '', needs_human: d.needs_human === true } }];"
+      }
+    },
+    {
+      "id": "5269bdd8-2688-4729-a7c5-f44ad0fff2e4",
+      "name": "Save to CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2016,
+        80
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').item.json.crm_url }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6e6592de-1cc3-4349-853e-e04c8a58c081",
+      "name": "Notify Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2240,
+        80
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Settings').item.json.manager_chat_id }}",
+        "text": "={{ '🔔 NEW LEAD ' + $('Lead Card').item.json.lead_id + '\\nChannel: ' + $('Lead Card').item.json.channel + '\\nClient: ' + $('Lead Card').item.json.name + ' (' + $('Lead Card').item.json.contact + ')\\nCategory: ' + $('Lead Card').item.json.category + ' · Priority: ' + $('Lead Card').item.json.priority + '\\nSummary: ' + $('Lead Card').item.json.summary + '\\nMissing: ' + ($('Lead Card').item.json.missing || '-') + '\\n\\nDraft reply:\\n' + $('Lead Card').item.json.draft_reply }}",
+        "additionalFields": {}
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "188b1fbd-a410-463b-9a5b-9f0368a2c936",
+      "name": "Respond to Channel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2464,
+        80
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, lead_id: $('Lead Card').item.json.lead_id, category: $('Lead Card').item.json.category, priority: $('Lead Card').item.json.priority, draft_reply: $('Lead Card').item.json.draft_reply, needs_human: $('Lead Card').item.json.needs_human } }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Lead Intake Webhook": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Has Attachment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attachment?": {
+      "main": [
+        [
+          {
+            "node": "Extract Attachment Data (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract Attachment Data (AI)": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [
+          {
+            "node": "Build Lead Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Lead Text": {
+      "main": [
+        [
+          {
+            "node": "Classify Lead (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Lead (AI)": {
+      "main": [
+        [
+          {
+            "node": "Lead Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Card": {
+      "main": [
+        [
+          {
+            "node": "Save to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to CRM": {
+      "main": [
+        [
+          {
+            "node": "Notify Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Manager": {
+      "main": [
+        [
+          {
+            "node": "Respond to Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}
