@@ -173,6 +173,7 @@ Explore 20 Telegram automation templates for n8n, including AI chatbots with Lan
 | Translate Telegram audio messages with AI (55 supported languages) | Receives voice messages, transcribes them, and sends back translations in over 50 languages. | Support | [Link to Template](Telegram/Translate%20Telegram%20audio%20messages%20with%20AI%20(55%20supported%20languages).json) |
 | Bitcoin price alert to Telegram with CoinPaprika | Polls the keyless CoinPaprika API on a schedule and sends a Telegram alert when Bitcoin moves 5% or more in 24h. No API key or signup required; swap the coin id to track any asset. | Finance | [Link to Template](Telegram/Bitcoin%20price%20alert%20to%20Telegram%20with%20CoinPaprika.json) |
 | Empower Your AI Chatbot with Long-Term Memory and Dynamic Tool Routing | External workflow enhancing an AI chatbot with long-term memory and dynamic tool routing capabilities. | Support | [Link to Template](https://n8n.io/workflows/3025-empower-your-ai-chatbot-with-long-term-memory-and-dynamic-tool-routing/) |
+| AI image generation bot with LivePair | Turns any Telegram message into an AI-generated image or video via the LivePair API — generate, poll the async job, and reply with the media. Uses the @livepairai/n8n-nodes-livepair community node. | AI/Content | [Link to Template](Telegram/AI%20image%20generation%20bot%20with%20LivePair.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
@@ -440,6 +441,7 @@ Explore 13 social media automation templates for n8n covering Instagram, Twitter
 | FlowScribe Lite - AI Content Repurposing (4 Platforms) | Converts one blog post into four optimized social media posts for Twitter, LinkedIn, Instagram, and Facebook using OpenAI. | Marketing/Content | [Link to Template](Instagram_Twitter_Social_Media/FlowScribe%20Lite%20-%20AI%20Content%20Repurposing%204%20Platforms.json) |
 | Monitor X Search with Xquik | Searches X with Xquik, normalizes matching posts, and builds an email-ready social listening digest. | Marketing/Analytics | [Link to Template](Instagram_Twitter_Social_Media/Monitor%20X%20Search%20with%20Xquik.json) |
 | Grounded Article to Thread and LinkedIn Post | Turns a pasted article or transcript into a numbered X/Twitter thread and a LinkedIn post, with every fact grounded in the source text. Flags thin input for human review instead of padding filler. | Marketing/Content/AI | [Link to Template](Instagram_Twitter_Social_Media/Grounded%20Article%20to%20Thread%20and%20LinkedIn%20Post.json) |
+| Generate AI media with LivePair and post to X | Generates AI images or video with the LivePair API via the @livepairai/n8n-nodes-livepair community node, then posts the result to X. Webhook-triggered, works on X free tier (post + media upload). | Marketing/AI | [Link to Template](Instagram_Twitter_Social_Media/Generate%20AI%20media%20with%20LivePair%20and%20post%20to%20X.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
