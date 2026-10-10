@@ -1,0 +1,844 @@
+{
+  "name": "Enrich LinkedIn profiles in Google Sheets with Datacircle",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Run the workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "8b769fba-0689-46fa-8768-b8285cba1f39"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "name": "Read LinkedIn URLs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        220,
+        300
+      ],
+      "id": "680d26b0-736b-4fe6-a929-aea3bdd57860"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.datacircle.dev/v1/profiles/enrich",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Data-Provider",
+              "value": "up2data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.linkedin_url }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Up2Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "id": "71dd5be5-3c66-4982-8e15-f2421444e60a"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "Found",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 200,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "Not found",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 422,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Not found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "Not a profile URL",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 400,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Not a profile URL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "Daily limit",
+                    "leftValue": "={{ $json.statusCode }}",
+                    "rightValue": 429,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Daily limit"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Other"
+        }
+      },
+      "name": "Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        660,
+        300
+      ],
+      "id": "ba189a31-7034-44fd-b276-b6822e3b9350"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "found",
+              "type": "string"
+            },
+            {
+              "id": "full_name",
+              "name": "full_name",
+              "value": "={{ $json.body.data.full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "headline",
+              "name": "headline",
+              "value": "={{ $json.body.data.headline }}",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "={{ $json.body.data.location?.raw }}",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.body.data.current_company?.name }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ $json.body.data.current_company?.title }}",
+              "type": "string"
+            },
+            {
+              "id": "industry",
+              "name": "industry",
+              "value": "={{ $json.body.data.current_company?.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "headcount",
+              "name": "headcount",
+              "value": "={{ $json.body.data.current_company?.headcount }}",
+              "type": "string"
+            },
+            {
+              "id": "cost_usd",
+              "name": "cost_usd",
+              "value": "={{ $json.body.datacircle_meta.cost_usd }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Profile",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        60
+      ],
+      "id": "060aadbc-97e1-410c-8e34-1bbd795d86f7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "not found: private or deleted, free",
+              "type": "string"
+            },
+            {
+              "id": "cost_usd",
+              "name": "cost_usd",
+              "value": "=0",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Not found",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        220
+      ],
+      "id": "691de353-8b2a-4ba1-b765-109c622f9384"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "not a profile URL, free",
+              "type": "string"
+            },
+            {
+              "id": "cost_usd",
+              "name": "cost_usd",
+              "value": "=0",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Not a profile URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        380
+      ],
+      "id": "c8d165db-191c-4828-b6b3-04000d107d98"
+    },
+    {
+      "parameters": {
+        "url": "https://api.datacircle.dev/linkedin/profile",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Data-Provider",
+              "value": "harvestapi"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "HarvestAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        540
+      ],
+      "id": "91c694f0-33fb-4016-a874-b08de44f4037"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "={{ $json.statusCode !== 200 ? 'error ' + $json.statusCode + ': ' + $json.body.error : $json.body.element ? 'found (HarvestAPI)' : 'not found (HarvestAPI)' }}",
+              "type": "string"
+            },
+            {
+              "id": "full_name",
+              "name": "full_name",
+              "value": "={{ [$json.body.element?.firstName, $json.body.element?.lastName].filter(Boolean).join(' ') }}",
+              "type": "string"
+            },
+            {
+              "id": "headline",
+              "name": "headline",
+              "value": "={{ $json.body.element?.headline }}",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "={{ $json.body.element?.location?.linkedinText }}",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.body.element?.currentPosition?.[0]?.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ $json.body.element?.currentPosition?.[0]?.position }}",
+              "type": "string"
+            },
+            {
+              "id": "cost_usd",
+              "name": "cost_usd",
+              "value": "={{ $json.body.datacircle_meta?.cost_usd ?? 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Profile from HarvestAPI",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        540
+      ],
+      "id": "86b105cb-ad8c-462d-9763-1359a14ebd9e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Read LinkedIn URLs').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "={{ 'error ' + $json.statusCode + ': ' + ($json.body.error?.message ?? $json.body.error) }}",
+              "type": "string"
+            },
+            {
+              "id": "cost_usd",
+              "name": "cost_usd",
+              "value": "=0",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        700
+      ],
+      "id": "20530bb8-f0a3-4dd3-bb77-de5b082a2358"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "linkedin_url"
+          ],
+          "schema": [
+            {
+              "id": "linkedin_url",
+              "displayName": "linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headcount",
+              "displayName": "headcount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cost_usd",
+              "displayName": "cost_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Write the columns",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1400,
+        300
+      ],
+      "id": "b41e8960-43ea-481d-b232-e40a134c5666"
+    },
+    {
+      "parameters": {
+        "content": "## Enrich LinkedIn profiles in Google Sheets with Datacircle\n\n### Who's it for\nAnyone with LinkedIn profile URLs in a Google Sheet who wants each person's name, headline, location, company and title next to them.\n\n### How it works\nDatacircle is a data co-op. You send the provider's own request to api.datacircle.dev, with your Datacircle key. That's the only change. Right now we have 3 live LinkedIn profile APIs that we trust: Up2Data, HarvestAPI and Fetchin. Each request goes to the provider and gets the profile as it is today.\n\n1. The workflow reads each row's `linkedin_url` from your sheet.\n2. An HTTP Request node requests the profile from Up2Data, one URL a second.\n3. A Switch sends each answer down its branch: the profile, not found (free), not a profile URL (free), Up2Data's daily limit (the workflow then sends the same URL to HarvestAPI), or an error.\n4. Every branch writes the same columns back to the row.\n\n$2.375 per 1,000 through Up2Data (a profile it can't find is free), $3.70 per 1,000 through HarvestAPI. Up2Data takes $1 a day per account (421 profiles), with a shared daily limit for all customers, then answers 429 until 00:00 UTC. HarvestAPI has no daily limit.\n\n### Requirements\n- A Google Sheet with a `linkedin_url` column, and a Google Sheets credential.\n- A Datacircle API key. Sign up at datacircle.dev with your work email: a $5 credit, that's 2,105 LinkedIn profiles at $2.375 per 1,000. You send the profile's URL with your Datacircle key: no LinkedIn login, no cookies, no browser.\n\n### How to set up\n1. Add a **Header Auth** credential: Name `Authorization`, Value `Token `, then your key. Pick it on both HTTP Request nodes.\n2. Pick your sheet in **Read LinkedIn URLs** and **Write the columns**.\n3. Run the workflow.\n\n### How to customize\nSwap Google Sheets for Airtable or your CRM: any node whose items have a `linkedin_url`. Every field we return: https://docs.datacircle.dev/linkedin-profile. A call your balance can't cover answers 402. Add funds, from $5, on your dashboard.",
+        "height": 1040,
+        "width": 560
+      },
+      "name": "About this workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -160
+      ],
+      "id": "58ed3c81-fbf3-45f1-af6a-4b28711f593d"
+    },
+    {
+      "parameters": {
+        "content": "### 1. Your sheet\nPick your sheet in **Read LinkedIn URLs**. Each row needs a `linkedin_url`, like `https://www.linkedin.com/in/williamhgates`.",
+        "height": 340,
+        "width": 400,
+        "color": 7
+      },
+      "name": "Step 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        120
+      ],
+      "id": "57d3c943-a659-4a92-aef1-d7db4b3a7b51"
+    },
+    {
+      "parameters": {
+        "content": "### 2. The call\nUp2Data through Datacircle, one URL a second. Pick your **Header Auth** credential here and on **HarvestAPI**: Name `Authorization`, Value `Token `, then your key.",
+        "height": 340,
+        "width": 420,
+        "color": 7
+      },
+      "name": "Step 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        120
+      ],
+      "id": "8552b2af-3efa-4c2b-af34-9f6a2d77143b"
+    },
+    {
+      "parameters": {
+        "content": "### 3. Each answer\n200: the profile. 422: private or deleted, free. 400: not a profile URL, free. 429: Up2Data's daily limit, so the same URL goes to HarvestAPI. Anything else: the status and the reason.",
+        "height": 980,
+        "width": 480,
+        "color": 7
+      },
+      "name": "Step 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        840,
+        -120
+      ],
+      "id": "9441df19-7e30-4401-8253-95867b664b90"
+    },
+    {
+      "parameters": {
+        "content": "### 4. Back to your sheet\nEvery branch has the same columns. The row is updated by its `linkedin_url`; a column the sheet doesn't have yet is added.",
+        "height": 340,
+        "width": 320,
+        "color": 7
+      },
+      "name": "Step 4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        120
+      ],
+      "id": "7157b47a-178d-42ce-aa30-336e21a33584"
+    }
+  ],
+  "connections": {
+    "Run the workflow": {
+      "main": [
+        [
+          {
+            "node": "Read LinkedIn URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read LinkedIn URLs": {
+      "main": [
+        [
+          {
+            "node": "Up2Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Up2Data": {
+      "main": [
+        [
+          {
+            "node": "Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status": {
+      "main": [
+        [
+          {
+            "node": "Profile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not a profile URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HarvestAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HarvestAPI": {
+      "main": [
+        [
+          {
+            "node": "Profile from HarvestAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profile": {
+      "main": [
+        [
+          {
+            "node": "Write the columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not found": {
+      "main": [
+        [
+          {
+            "node": "Write the columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not a profile URL": {
+      "main": [
+        [
+          {
+            "node": "Write the columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profile from HarvestAPI": {
+      "main": [
+        [
+          {
+            "node": "Write the columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error": {
+      "main": [
+        [
+          {
+            "node": "Write the columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
