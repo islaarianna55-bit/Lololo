@@ -180,7 +180,7 @@ Explore 20 Telegram automation templates for n8n, including AI chatbots with Lan
 
 ### What are the best n8n templates for Google Drive and Google Sheets?
 
-Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, and document summarization workflows. Perfect for operations, sales, marketing, and engineering teams.
+Browse 20 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, document summarization workflows, and landlord alerts for late rent, late fees and lease renewal notices from a Google Sheet. Perfect for operations, sales, marketing, and engineering teams.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -202,6 +202,8 @@ Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes 
 | Summarize Google Sheets form feedback via OpenAI's GPT-4 | Summarizes feedback collected through Google Forms and stored in Google Sheets using OpenAI's GPT-4, providing quick insights from survey responses. | Marketing | [Link to Template](Google_Drive_and_Google_Sheets/Summarize%20Google%20Sheets%20form%20feedback%20via%20OpenAI_s%20GPT-4.json) |
 | Airtable to Google Sheets Auto-Sync | Automates bidirectional sync between Airtable and Google Sheets using n8n. Searches Airtable for recently updated records and upserts them into Google Sheets. | Ops | [Link to Template](Google_Drive_and_Google_Sheets/Airtable%20to%20Google%20Sheets%20Auto-Sync.json) |
 | Enrich a Google Sheet of companies with EU business register data | Takes a column of company names from a Google Sheet, looks each one up in the official register of seven European countries, and writes the registration number, VAT number, status and address back to the sheet. | Sales/Ops | [Link to Template](Google_Drive_and_Google_Sheets/Enrich%20a%20Google%20Sheet%20of%20companies%20with%20EU%20business%20register%20data.json) |
+| Late rent and late fee alerts from a Google Sheet rent ledger | Reads a rent ledger (Google Sheet published as CSV) every morning, works out days late, the late fee under your grace period / flat / percent / daily / cap rule and the balance, and posts who is LATE or still owes a fee to Slack, Discord or Google Chat. Silent when everyone has paid. No API keys. | Real Estate/Finance | [Link to Template](Google_Drive_and_Google_Sheets/Late%20rent%20and%20late%20fee%20alerts%20from%20a%20Google%20Sheet%20rent%20ledger.json) |
+| Lease renewal notice reminders from a Google Sheet | Works out each lease's notice send-by date (lease end − notice days − mailing buffer) every Monday and warns in chat before it passes, including overdue notices and the proposed new rent. No API keys. | Real Estate/Ops | [Link to Template](Google_Drive_and_Google_Sheets/Lease%20renewal%20notice%20reminders%20from%20a%20Google%20Sheet.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
@@ -283,7 +285,7 @@ Find 5 database and storage automation templates for n8n. Chat with PostgreSQL u
 
 ### What n8n templates are available for DevOps and server automation?
 
-This section includes 9 DevOps and reliability templates for n8n, including a local check for empty or malformed workflow outputs with an optional count-only monitoring receipt. Audit a public page and build an implementation acceptance pack, trigger Linux system updates via authenticated webhooks over SSH, control Docker Compose services remotely, watch disk usage across mountpoints, diagnose failed n8n execution JSON without connecting to a live instance, find active workflows that stopped running altogether, or get a Telegram alert only when a site's up/down state changes.
+This section includes 11 DevOps and reliability templates for n8n, including a local check for empty or malformed workflow outputs with an optional count-only monitoring receipt. Audit a public page and build an implementation acceptance pack, trigger Linux system updates via authenticated webhooks over SSH, control Docker Compose services remotely, watch disk usage across mountpoints, diagnose failed n8n execution JSON without connecting to a live instance, find active workflows that stopped running altogether, audit every workflow weekly for pasted secrets and unauthenticated webhooks, get told when a new n8n release is out for your self-hosted instance, or get a Telegram alert only when a site's up/down state changes.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -296,6 +298,8 @@ This section includes 9 DevOps and reliability templates for n8n, including a lo
 | Uptime Ping Alert | Pings a URL every 5 minutes and notifies Telegram only when the up/down state actually changes (no repeated alerts while it stays down). No external API key beyond a Telegram bot token. | SSH Tools | [Link to Template](devops/uptime-ping-alert.json) |
 | GitHub Stars and Dev.to Engagement Monitor | Checks GitHub repo stars/forks/open issues and dev.to article reactions/comments on a schedule, compiling them into one record per run — for tracking whether anyone noticed what you shipped without opening five tabs. Easy to extend: duplicate an HTTP node per repo/article you want to track. | Marketing | [Link to Template](devops/GitHub%20Stars%20and%20Dev.to%20Engagement%20Monitor.json) |
 | n8n Silent Workflow Check | Finds workflows that are active but have not run — the failure that produces no failed execution, so an error workflow never fires for it. Compares every active workflow against its last execution on a schedule and returns the ones quiet longer than your threshold. No external API key beyond an n8n API key. | Engineering | [Link to Template](devops/n8n%20Silent%20Workflow%20Check.json) |
+| n8n New Release Alert for Self-Hosters | Checks n8n's GitHub releases daily against the version you run and posts one chat message per new stable release (pre-releases skipped), with a warning on major version jumps. Remembers what it already told you. No API key. | Engineering | [Link to Template](devops/n8n%20New%20Release%20Alert%20for%20Self-Hosters.json) |
+| Weekly n8n Workflow Security Audit | Reads every workflow through the n8n API each Monday and reports pasted secrets (redacted), webhooks without authentication, missing error workflows, swallowed errors and pinned data to chat. Posts nothing when clean. Needs only an n8n API key. | Engineering | [Link to Template](devops/Weekly%20n8n%20Workflow%20Security%20Audit.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
@@ -509,7 +513,7 @@ This section includes 49 additional n8n integration templates covering a wide ra
 
 ### How do I automate forms and surveys with n8n?
 
-This section contains 5 form and survey automation templates for n8n. Conduct AI-powered conversational interviews via n8n Forms, manage email subscriptions with Airtable integration, or qualify appointment requests using AI. These templates streamline data collection and lead processing workflows.
+This section contains 6 form and survey automation templates for n8n. Conduct AI-powered conversational interviews via n8n Forms, manage email subscriptions with Airtable integration, qualify appointment requests using AI, or upload a bank CSV and get it back categorized for US Schedule C or Schedule E taxes. These templates streamline data collection and lead processing workflows.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -518,6 +522,7 @@ This section contains 5 form and survey automation templates for n8n. Conduct AI
 | Generate a Song from a Form (Tunova) | A hosted n8n Form collects a text prompt, then Tunova generates an original Suno AI song (v5.5) and returns the audio URL. Core HTTP node — runs on any n8n. Free API key at tunova.ai. | Marketing/Creative | [Link to Template](Forms_and_Surveys/Tunova%20-%20Generate%20a%20song%20from%20a%20form.json) |
 | Qualifying Appointment Requests with AI & n8n Forms | Uses AI to qualify and process appointment requests submitted through n8n Forms. | Sales/Support | [Link to Template](Forms_and_Surveys/Qualifying%20Appointment%20Requests%20with%20AI%20&%20n8n%20Forms.json) |
 | Check a company in seven EU business registers from a form | Somebody submits a company name or registration number through an n8n Form and the workflow reads the official business register of Czechia, Estonia, Finland, France, Norway, Poland or Slovakia, then branches on whether the company is still active. | Finance/Ops | [Link to Template](Forms_and_Surveys/Check%20a%20company%20in%20seven%20EU%20business%20registers%20from%20a%20form.json) |
+| Bank CSV to Schedule C or Schedule E categories with an n8n Form | A private n8n form: upload a bank or card CSV and download it categorized into US Schedule C (freelancer) or Schedule E (landlord) lines, with totals per line. Handles US/EU number and date formats. Runs entirely inside your n8n; no AI or third-party API. | Finance | [Link to Template](Forms_and_Surveys/Bank%20CSV%20to%20Schedule%20C%20or%20Schedule%20E%20categories%20with%20an%20n8n%20Form.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
