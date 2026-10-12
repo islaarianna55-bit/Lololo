@@ -1,0 +1,61 @@
+{
+  "name": "Revenue Control: website form to lead",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "revenue-control-form",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "11111111-0000-4000-8000-000000000001",
+      "name": "Form submitted",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "00000000-0000-4000-8000-000000000000"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://control.boardroom-ai.ae/api/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.body.name, phone: $json.body.phone, email: $json.body.email, title: 'Website form: ' + ($json.body.service || 'enquiry'), source_campaign: $json.body.utm_campaign || 'website', external_id: $json.body.form_id, note: $json.body.message }) }}",
+        "options": {}
+      },
+      "id": "11111111-0000-4000-8000-000000000002",
+      "name": "Create lead in Revenue Control",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Revenue Control API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, lead_id: $json.id, created: $json.created } }}",
+        "options": {}
+      },
+      "id": "11111111-0000-4000-8000-000000000003",
+      "name": "Reply to the form",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [520, 0]
+    }
+  ],
+  "connections": {
+    "Form submitted": { "main": [[{ "node": "Create lead in Revenue Control", "type": "main", "index": 0 }]] },
+    "Create lead in Revenue Control": { "main": [[{ "node": "Reply to the form", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "pinData": {}
+}
