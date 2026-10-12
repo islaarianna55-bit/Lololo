@@ -1,0 +1,215 @@
+{
+  "name": "Merge video clips, voiceover and captions into one MP4 with Apify",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"clips\": [],\n  \"voiceover_url\": null,\n  \"captions_srt\": null,\n  \"orientation\": \"vertical\",\n  \"fit\": \"crop\",\n  \"max_seconds\": 60\n}\n"
+      },
+      "id": "a2",
+      "name": "Set video job",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/agentutilitylabs~short-video-assembler/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "a3",
+      "name": "Assemble video on Apify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "video_url",
+              "value": "={{ $json.video_url }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "duration_seconds",
+              "value": "={{ $json.duration_seconds }}",
+              "type": "number"
+            },
+            {
+              "id": "f3",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "result-demo",
+              "name": "demo",
+              "value": "={{ $json.demo }}",
+              "type": "boolean"
+            },
+            {
+              "id": "result-charged",
+              "name": "charged",
+              "value": "={{ $json.charged }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4",
+      "name": "Return video URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Assemble supplied media into an MP4\n\nYou supply 1-10 clips, optional narration audio and optional timed SRT captions. This tool assembles them; it does not generate media or caption timing.\n\n### 1. Connect Apify\nIn **Assemble video on Apify**, add a Header Auth credential: Name: Authorization; Value: Bearer YOUR_APIFY_TOKEN. Never paste your token into workflow JSON.\n\n### 2. Try the free demo\nLeave **Set video job** unchanged (clips: []). Execute once. The cached 12-second demo returns demo=true and charged=false.\n\n### 3. Choose a real render\nReplace the entire JSON in **Set video job** with the sample in the note below, or your own public media URLs. Review the $0.20 charge before executing. An empty clips list always returns the demo.\n\n### Price and limits\n$0.20 per successfully assembled video. Failed renders incur no video-assembly charge. The demo has no video-assembly charge; compute is still incurred by the operator.\n\nUp to 10 clips and 60 seconds of output; 200 MB/file, 600 MB total downloads. Original clip audio is discarded. No per-clip trimming. You supply caption timing. Save the MP4 promptly to your own storage; the returned link is not permanent.\n\nDo not automatically retry a timed-out request: a render may still be running. Check Apify Runs first.\n\n### Duration and ownership\nOutput duration is the shorter of total clip duration and max_seconds. Narration and timed captions must fit that output duration. Incompatible jobs are rejected before rendering, without a video-assembly charge. max_seconds does not extend footage. Use only media you are authorized to process.\n\nMaintained by Agent Utility Labs, which operates the paid Actor. Published template: https://n8n.io/workflows/20412",
+        "height": 1020,
+        "width": 520,
+        "color": 1
+      },
+      "id": "s1",
+      "name": "Template overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1. Demo or paid input\nEmpty clips list = cached free demo.\nNon-empty clips list = real render, $0.20 per successfully assembled video.\n\nUse the copyable sample below, or your own public clip URLs. Voiceover and timed SRT captions are optional.",
+        "height": 300,
+        "width": 220,
+        "color": 7
+      },
+      "id": "s2",
+      "name": "Step 1 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2. Assemble video on Apify\nSelect your own Header Auth credential:\nName `Authorization`\nValue `Bearer YOUR_APIFY_TOKEN`\n\nRuntime varies with media. This request waits up to 5 minutes; a timeout does not cancel the Actor. Check Apify Runs before retrying.",
+        "height": 300,
+        "width": 220,
+        "color": 7
+      },
+      "id": "s3",
+      "name": "Step 2 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 3. Check the result\nDemo: demo=true, charged=false.\nReal render: demo=false; charged reflects the actual billing result.\n\nSave video_url to your own storage promptly. Do not count a successful free demo as a paid video.",
+        "height": 300,
+        "width": 220,
+        "color": 7
+      },
+      "id": "s4",
+      "name": "Step 3 note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -320
+      ]
+    },
+    {
+      "id": "paid-example-note",
+      "name": "Optional paid sample - review price first",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        260
+      ],
+      "parameters": {
+        "width": 950,
+        "height": 660,
+        "color": 5,
+        "content": "## Optional first real render - $0.20 on successful assembly\nCopy this JSON into **Set video job**, replacing its contents, only when ready to pay. Then execute manually. The default input above remains free.\n\nThis is an 8-second silent example with supplied caption timing, using a NASA public-domain clip from our tested showcase. NASA does not endorse this tool. External source availability can change.\n\n```json\n{\n  \"clips\": [\n    \"https://upload.wikimedia.org/wikipedia/commons/f/f1/SDO_Video_Toolkit_%28SVS14126_-_Canyon_of_Fire_New-Slow%29.webm\"\n  ],\n  \"voiceover_url\": null,\n  \"captions_srt\": \"1\\n00:00:00,000 --> 00:00:04,000\\nMy first assembled video\\n\\n2\\n00:00:04,000 --> 00:00:08,000\\nFootage: NASA (public domain)\\n\",\n  \"orientation\": \"vertical\",\n  \"fit\": \"pad\",\n  \"max_seconds\": 8\n}\n```\n\nExpected: demo=false, status=ok and an MP4 URL. Check charged for the actual charge result. Add your own voiceover URL if you want narration; clip audio is discarded."
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Set video job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set video job": {
+      "main": [
+        [
+          {
+            "node": "Assemble video on Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble video on Apify": {
+      "main": [
+        [
+          {
+            "node": "Return video URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}
