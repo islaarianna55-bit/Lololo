@@ -70,7 +70,7 @@
     },
     {
       "parameters": {
-        "content": "## Products by GTIN with your tracked links\nSearches the Clickwise multi-store product catalog by GTIN (EAN/UPC) or text with the built-in **MCP Client** node. Each product comes back with price, merchant, availability and **your own tracked affiliate link** (`url`).\n\nSetup: Header Auth credential, name `X-API-Key`, value = your Clickwise key (a free 14-day sandbox key works for trying it). Publish links exactly as returned and mark them as affiliate links.\n\nGuide: https://github.com/softdevfz/clickwise-api/tree/main/mcp/n8n",
+        "content": "## Products by GTIN with your tracked links\nSearches the Clickwise product catalog by GTIN (EAN/UPC) or text with the built-in **MCP Client** node. Each product comes back with price, merchant, availability and **your own tracked affiliate link** (`url`).\n\nSetup: Header Auth credential, name `X-API-Key`, value = your Clickwise key (a free 14-day sandbox key works for trying it). Publish links exactly as returned and mark them as affiliate links.\n\nGuide: https://github.com/softdevfz/clickwise-api/tree/main/mcp/n8n",
         "height": 260,
         "width": 420
       },
