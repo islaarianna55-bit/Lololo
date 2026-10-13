@@ -1,0 +1,115 @@
+{
+  "name": "Clickwise - Products by GTIN with your tracked links",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5e0c3a51-0002-4a00-9000-000000000001",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e0c3a51-0002-4a00-9000-0000000000a1",
+              "name": "gtin",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "5e0c3a51-0002-4a00-9000-0000000000a2",
+              "name": "text",
+              "value": "drill",
+              "type": "string"
+            },
+            {
+              "id": "5e0c3a51-0002-4a00-9000-0000000000a3",
+              "name": "country",
+              "value": "GB",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5e0c3a51-0002-4a00-9000-000000000002",
+      "name": "What to search",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://partners.clickwise.net/api/v1/mcp",
+        "authentication": "headerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "search_products"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ JSON.stringify(Object.fromEntries(Object.entries({ gtin: $json.gtin, text: $json.text, country: $json.country, limit: 5 }).filter(([k, v]) => v !== '' && v != null))) }}"
+      },
+      "id": "5e0c3a51-0002-4a00-9000-000000000003",
+      "name": "Clickwise: search products",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Products by GTIN with your tracked links\nSearches the Clickwise product catalog by GTIN (EAN/UPC) or text with the built-in **MCP Client** node. Each product comes back with price, merchant, availability and **your own tracked affiliate link** (`url`).\n\nSetup: Header Auth credential, name `X-API-Key`, value = your Clickwise key (a free 14-day sandbox key works for trying it). Publish links exactly as returned and mark them as affiliate links.\n\nGuide: https://github.com/softdevfz/clickwise-api/tree/main/mcp/n8n",
+        "height": 260,
+        "width": 420
+      },
+      "id": "5e0c3a51-00ff-4a00-9000-0000000000ee",
+      "name": "About this template",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -340
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "What to search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "What to search": {
+      "main": [
+        [
+          {
+            "node": "Clickwise: search products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
