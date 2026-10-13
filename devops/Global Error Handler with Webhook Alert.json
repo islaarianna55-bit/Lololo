@@ -1,0 +1,136 @@
+{
+  "name": "Global Error Handler with Webhook Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "width": 420,
+        "height": 260,
+        "content": "## 🛡️ Global Error Handler — Setup (3 steps)\n\n1. Paste your alert endpoint into the **Send Alert** node (works with Slack incoming webhooks, ntfy, Discord, or any POST endpoint).\n2. **Activate** this workflow and leave it on.\n3. In every workflow you want covered: **Settings → Error Workflow → select this workflow**. Only active workflows fire Error Trigger events — inactive/test runs do not.\n\nFrom then on, every failed execution anywhere posts one compact alert here instead of failing silently."
+      },
+      "id": "9c1a7be2-3f04-4f3a-93b4-7c0f2e8a2d11",
+      "name": "Setup Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [60, 240]
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 200,
+        "content": "## Why one global handler?\nIn activation mode, a workflow with no Error Workflow fails **silently** — no alert, no visible trace unless you open the executions list. n8n lets exactly ONE error workflow catch everything, so a single lightweight handler like this is the safety net for your whole instance.\n\nTemplate by TriggerWorkflow — audit any exported workflow JSON for the other silent-killer patterns (hardcoded secrets, missing timeouts/retries, unprotected webhooks): https://tools.triggerworkflow.com/free-audit"
+      },
+      "id": "b4d2f038-1a77-44e8-9c1d-2a5a9e7b0122",
+      "name": "Why & Credits",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [60, 520]
+    },
+    {
+      "parameters": {},
+      "id": "7f3c9a10-6b51-4c3a-9d22-1c4e8f0a7731",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [260, 360]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "failedWorkflow",
+              "value": "={{ $json.workflow.name || $json.workflow.id || 'unknown workflow' }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "failedNode",
+              "value": "={{ $json.execution?.lastNodeExecuted || 'unknown node' }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "errorMessage",
+              "value": "={{ String($json.execution?.error?.message || 'no message').substring(0, 300) }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "executionUrl",
+              "value": "={{ $json.execution?.url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "failedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2e5b8c44-90d2-4e6f-b7a3-3d1f5a2c6844",
+      "name": "Extract Error Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 360]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-alert-endpoint.example.com/hook",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "=\"🛑 n8n workflow failed\\n• Workflow: \" + $json.failedWorkflow + \"\\n• Node: \" + $json.failedNode + \"\\n• Error: \" + $json.errorMessage + \"\\n• When: \" + $json.failedAt + ($json.executionUrl ? \"\\n• Execution: \" + $json.executionUrl : \"\")",
+        "options": {
+          "timeout": 10000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          }
+        }
+      },
+      "id": "51c6e2a8-7f30-4b9d-a6c1-8e0a4d2b9957",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "position": [700, 360]
+    }
+  ],
+  "active": false,
+  "settings": {
+    "saveManualExecutions": true,
+    "executionTimeout": 300
+  },
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Error Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Error Info": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
