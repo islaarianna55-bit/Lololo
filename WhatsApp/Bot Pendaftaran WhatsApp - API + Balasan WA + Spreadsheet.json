@@ -1,0 +1,422 @@
+{
+ "name": "Bot Pendaftaran WhatsApp - API + Balasan WA + Spreadsheet",
+ "nodes": [
+  {
+   "id": "12e095c6-2f35-47f0-a14a-da863f69fcb1",
+   "name": "Webhook Pesan Masuk",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2.1,
+   "position": [
+    260,
+    300
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "pendaftaran-wa-2",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "webhookId": "pendaftaran-wa-webhook-2"
+  },
+  {
+   "id": "076bde1f-597c-4d57-a2f8-a59ea19bbcfa",
+   "name": "Normalize Data Pendaftar",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    460,
+    300
+   ],
+   "parameters": {
+    "mode": "runOnceForAllItems",
+    "language": "javaScript",
+    "jsCode": "// Menerima payload dari wago-api webhook\n// Format: { sessionId, event, data: { id, chat, sender, pushName, timestamp, body, type, ... } }\nconst req = $input.first().json;\nconst body = req.body ?? req;\n\nlet evt = body;\nif (body.data) evt = body.data;\n\n// Skip pesan dari diri sendiri dan group\nif (evt.isFromMe === true || evt.isGroup === true) return [];\n\n// Ambil pesan teks\nconst text = (evt.body || '').toString().trim();\nif (!text) return [];\n\n// Parsing format pendaftaran\nconst fields = {};\nconst lines = text.split(/[,\\n]/);\nfor (const line of lines) {\n  const kv = line.split(/[:=]/);\n  if (kv.length >= 2) {\n    const k = kv[0].trim().toLowerCase();\n    const v = kv.slice(1).join(':').trim();\n    fields[k] = v;\n  }\n}\n\nconst extract = (patterns) => {\n  for (const p of patterns) {\n    const m = text.match(new RegExp(p, 'i'));\n    if (m) return m[1]?.trim();\n  }\n  return undefined;\n};\n\nconst nama = fields['nama'] || fields['name'] || fields['nama lengkap'] || extract([r'Nama[:\\s]+([^,\\n]+)', r'Nama Lengkap[:\\s]+([^,\\n]+)']);\nconst alamat = fields['alamat'] || fields['address'] || extract([r'Alamat[:\\s]+([^,\\n]+)']);\nconst noHp = fields['no hp'] || fields['no. hp'] || fields['nomor hp'] || fields['phone'] || fields['hp'] || extract([r'(?:No\\.?\\s*HP|HP|Phone|Nomor)[:\\s]+(\\+?\\d[\\d\\s\\-]+)']);\nconst email = fields['email'] || fields['e-mail'] || extract([r'Email[:\\s]+([^,\\n\\s]+)']);\n\nlet hpNorm = '';\nif (noHp) {\n  let digits = noHp.replace(/\\D/g, '');\n  if (digits.startsWith('0')) digits = '62' + digits.slice(1);\n  if (!digits.startsWith('62')) digits = '62' + digits;\n  hpNorm = digits;\n}\n\nreturn [{\n  json: {\n    nama: nama || evt.pushName || 'Tidak diketahui',\n    alamat: alamat || '',\n    no_hp: hpNorm || evt.sender?.replace(/@.*/,'') || '',\n    email: email || '',\n    pesan_asli: text,\n    wa_sender: evt.sender || '',\n    wa_chat: evt.chat || '',\n    wa_pushName: evt.pushName || '',\n    wa_timestamp: evt.timestamp || new Date().toISOString(),\n    wa_messageId: evt.id || '',\n    is_valid: !!(nama && hpNorm),\n    registered_at: new Date().toISOString()\n  }\n}];"
+   }
+  },
+  {
+   "id": "ad8b7a1f-9790-4541-bb7f-3d8c2de9b2f8",
+   "name": "Validasi Data?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    660,
+    300
+   ],
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "c70bfb97-72e2-425c-b6cb-7660b8bd2e7a",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       },
+       "leftValue": "={{ $json.is_valid }}",
+       "rightValue": ""
+      }
+     ],
+     "options": {
+      "version": 2,
+      "leftValue": "",
+      "caseSensitive": true,
+      "typeValidation": "strict"
+     }
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "7aaaef16-8e32-45af-97a7-1213b6ae40a3",
+   "name": "Kirim ke API Pendaftaran",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.4,
+   "position": [
+    860,
+    200
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.pendaftaran.example.com/api/register",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendBody": true,
+    "contentType": "json",
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({nama: $json.nama, alamat: $json.alamat, no_hp: $json.no_hp, email: $json.email, sumber: \"whatsapp\", wa_sender: $json.wa_sender, wa_message_id: $json.wa_messageId, registered_at: $json.registered_at}) }}",
+    "options": {}
+   }
+  },
+  {
+   "id": "89ff95af-ba2c-4579-8f7a-adc6f3ae0b88",
+   "name": "Set Config WA Gateway",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.2,
+   "position": [
+    860,
+    400
+   ],
+   "parameters": {
+    "mode": "manual",
+    "fields": {
+     "values": [
+      {
+       "name": "wa_base_url",
+       "type": "string",
+       "value": "http://localhost:3000"
+      },
+      {
+       "name": "wa_session",
+       "type": "string",
+       "value": "default"
+      },
+      {
+       "name": "wa_api_key",
+       "type": "string",
+       "value": ""
+      }
+     ]
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "1360be5d-5099-4ccf-a95e-72650285850b",
+   "name": "Kirim Balasan WA (wago-api)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.4,
+   "position": [
+    1060,
+    400
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "={{ $json.wa_base_url }}/client/sendMessage/{{ $json.wa_session }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendBody": true,
+    "contentType": "json",
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({chatId: $json.wa_chat, text: \"Terima kasih \" + $json.nama + \"! Pendaftaran Anda sudah kami terima dan sedang diproses.\"}) }}",
+    "options": {}
+   }
+  },
+  {
+   "id": "fe0f29e2-b0fa-4ea4-82a8-fc38de19ff4d",
+   "name": "Simpan ke Spreadsheet",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1060,
+    200
+   ],
+   "parameters": {
+    "authentication": "oAuth2",
+    "resource": "sheet",
+    "operation": "append",
+    "documentId": {
+     "__rl": true,
+     "mode": "list",
+     "value": "",
+     "cachedResultName": "Pendaftaran WA"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "list",
+     "value": "",
+     "cachedResultName": "Data"
+    },
+    "columns": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "Timestamp": "={{ $json.registered_at }}",
+      "Nama": "={{ $json.nama }}",
+      "Alamat": "={{ $json.alamat }}",
+      "No HP": "={{ $json.no_hp }}",
+      "Email": "={{ $json.email }}",
+      "Pesan Asli": "={{ $json.pesan_asli }}",
+      "Sumber": "=whatsapp",
+      "Status": "=Terkirim ke API + Balasan WA"
+     },
+     "schema": [
+      {
+       "id": "Timestamp",
+       "displayName": "Timestamp",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Nama",
+       "displayName": "Nama",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Alamat",
+       "displayName": "Alamat",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "No HP",
+       "displayName": "No HP",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Email",
+       "displayName": "Email",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": true
+      },
+      {
+       "id": "Pesan Asli",
+       "displayName": "Pesan Asli",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": false
+      },
+      {
+       "id": "Sumber",
+       "displayName": "Sumber",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": false
+      },
+      {
+       "id": "Status",
+       "displayName": "Status",
+       "required": false,
+       "defaultMatch": false,
+       "display": true,
+       "type": "string",
+       "canBeUsedToMatch": false
+      }
+     ]
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "0d06d980-ce84-4e85-b96b-3f1ba177e835",
+   "name": "Balasan Sukses",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    1260,
+    200
+   ],
+   "parameters": {
+    "options": {
+     "responseCode": 200
+    },
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify({status:\"ok\",message:\"Pendaftaran berhasil diterima. Terima kasih!\"}) }}"
+   }
+  },
+  {
+   "id": "453de299-8b0e-482d-9a90-24d8fbc3b0ee",
+   "name": "Balasan Gagal Validasi",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    860,
+    600
+   ],
+   "parameters": {
+    "options": {
+     "responseCode": 200
+    },
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify({status:\"error\",message:\"Format pendaftaran tidak lengkap. Mohon kirim dengan format: Nama: [nama], Alamat: [alamat], No HP: [nomor]\"}) }}"
+   }
+  },
+  {
+   "id": "5768e93d-2314-4cda-8fa6-c4b326f0df3b",
+   "name": "Sticky Overview",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    260,
+    100
+   ],
+   "parameters": {
+    "content": "## Bot Pendaftaran WhatsApp (Full)\n\nMenangkap pesan pendaftaran dari WhatsApp (via wago-api), memvalidasi format, mengirim ke API pendaftaran, membalas via WhatsApp (wago-api), dan menyimpan ke Google Sheets.",
+    "width": 420,
+    "height": 220
+   }
+  },
+  {
+   "id": "250aea84-05d5-4604-b043-68ea112906d7",
+   "name": "Sticky Setup",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    660,
+    700
+   ],
+   "parameters": {
+    "content": "## Setup\n1. Konfigurasi webhook wago-api ke URL webhook ini (Production URL setelah aktif)\n2. Ganti URL API Pendaftaran di node HTTP Request\n3. Isi base URL, session, dan API key wago-api di node Set Config\n4. Hubungkan kredensial Google Sheets dan pilih spreadsheet\n5. Aktifkan workflow",
+    "width": 420,
+    "height": 200,
+    "color": 4
+   }
+  }
+ ],
+ "connections": {
+  "Webhook Pesan Masuk": {
+   "main": [
+    [
+     {
+      "node": "Normalize Data Pendaftar",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Normalize Data Pendaftar": {
+   "main": [
+    [
+     {
+      "node": "Validasi Data?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Validasi Data?": {
+   "main": [
+    [
+     {
+      "node": "Kirim ke API Pendaftaran",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Set Config WA Gateway",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Balasan Gagal Validasi",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Kirim ke API Pendaftaran": {
+   "main": [
+    [
+     {
+      "node": "Simpan ke Spreadsheet",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Config WA Gateway": {
+   "main": [
+    [
+     {
+      "node": "Kirim Balasan WA (wago-api)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Simpan ke Spreadsheet": {
+   "main": [
+    [
+     {
+      "node": "Balasan Sukses",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Kirim Balasan WA (wago-api)": {
+   "main": [
+    [
+     {
+      "node": "Balasan Sukses",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "active": false,
+ "settings": {
+  "executionOrder": "v1"
+ },
+ "pinData": {}
+}

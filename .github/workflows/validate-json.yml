@@ -1,0 +1,109 @@
+name: Validate workflow JSON
+
+on:
+  pull_request:
+    paths:
+      - "**/*.json"
+  push:
+    paths:
+      - "**/*.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-json:
+    name: Every template is valid, importable JSON
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate all JSON files
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, glob
+
+          SKIP_DIRS = {".git", "node_modules", ".workbuddy-ai", "docs"}
+          # Files that intentionally are not single n8n workflow exports.
+          ALLOW_NON_WORKFLOW = {"Other/ALL_unique_nodes.json"}
+
+          errors = []
+          checked = 0
+
+          for dp, dn, fns in os.walk("."):
+              dn[:] = [d for d in dn if d not in SKIP_DIRS]
+              for fn in fns:
+                  if not fn.endswith(".json"):
+                      continue
+                  p = os.path.join(dp, fn)
+                  rel = os.path.relpath(p, ".").replace(os.sep, "/")
+                  checked += 1
+
+                  raw = open(p, encoding="utf-8").read()
+
+                  # 1. must parse as exactly one JSON document
+                  dec = json.JSONDecoder()
+                  try:
+                      obj, end = dec.raw_decode(raw.lstrip())
+                  except json.JSONDecodeError as e:
+                      errors.append(f"{rel}: invalid JSON -> {e}")
+                      continue
+                  trailing = raw.lstrip()[end:].strip()
+                  if trailing:
+                      errors.append(
+                          f"{rel}: trailing content after JSON ({len(trailing)} bytes): "
+                          f"{trailing[:60]!r}"
+                      )
+
+                  if rel in ALLOW_NON_WORKFLOW:
+                      continue
+
+                  # 2. must look like an n8n workflow
+                  if not isinstance(obj, dict):
+                      errors.append(f"{rel}: root is not a JSON object")
+                      continue
+                  nodes = obj.get("nodes")
+                  if not isinstance(nodes, list) or not nodes:
+                      errors.append(f"{rel}: missing or empty 'nodes' array")
+                      continue
+                  if not isinstance(obj.get("connections"), dict):
+                      errors.append(f"{rel}: missing 'connections' object")
+                      continue
+
+                  # 3. every connection must point at an existing node
+                  names = {n.get("name") for n in nodes if isinstance(n, dict)}
+                  for src, outs in obj["connections"].items():
+                      if src not in names:
+                          errors.append(f"{rel}: connection source '{src}' is not a node")
+                      if not isinstance(outs, dict):
+                          continue
+                      for branches in outs.values():
+                          if not isinstance(branches, list):
+                              continue
+                          for branch in branches:
+                              if not isinstance(branch, list):
+                                  continue
+                              for link in branch:
+                                  if isinstance(link, dict) and link.get("node") not in names:
+                                      errors.append(
+                                          f"{rel}: connection target '{link.get('node')}' "
+                                          f"(from '{src}') is not a node"
+                                      )
+
+          print(f"Checked {checked} JSON files.")
+          if errors:
+              print(f"\n{len(errors)} problem(s) found:\n")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+          print("All JSON files are valid and importable.")
+          PY
