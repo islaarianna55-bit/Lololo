@@ -1,0 +1,200 @@
+{
+  "name": "Publish one video to TikTok YouTube Instagram and more with Multi Upload Tool",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b1111111-1111-4111-8111-111111111111",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-260, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "video_url",
+              "value": "https://example.com/your-vertical-video.mp4",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "title",
+              "value": "My new video",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "description",
+              "value": "Posted to every channel at once #automation",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "platforms",
+              "value": "tiktok,youtube,instagram",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2222222-2222-4222-8222-222222222222",
+      "name": "Your video and caption",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.multi-upload-tool.com/api/v1/accounts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b3333333-3333-4333-8333-333333333333",
+      "name": "List connected accounts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Your video and caption').item.json.video_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "b4444444-4444-4444-8444-444444444444",
+      "name": "Download the video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.multi-upload-tool.com/api/v1/upload/bulk",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accounts",
+              "value": "={{ JSON.stringify($('List connected accounts').item.json.data.filter(a => $('Your video and caption').item.json.platforms.split(',').map(p => p.trim().toLowerCase()).includes(a.platform)).map(a => a.id)) }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "video",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "title",
+              "value": "={{ $('Your video and caption').item.json.title }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $('Your video and caption').item.json.description }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b5555555-5555-4555-8555-555555555555",
+      "name": "Publish to every selected account",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Publish one video to TikTok, YouTube, Instagram and more\n\n### Who's it for\nCreators, social media managers and small agencies who post the same short video on several networks and want to stop uploading it by hand on each app.\n\n### What it does\nYou give it one video URL, a title and a caption. The workflow lists the accounts you connected in Multi Upload Tool, keeps the platforms you picked, downloads the video and sends it to all of them in a single `POST /upload/bulk` call. Supported platforms: TikTok, YouTube, Instagram, Facebook, LinkedIn, Pinterest, Bluesky, Threads and X. Publishing goes through each platform's official API.\n\n### How to set up\n1. Create an account at https://multi-upload-tool.com (the free plan, 2 accounts, is enough to try it) and connect your social accounts there.\n2. Create an API key in the dashboard.\n3. In n8n, create a **Header Auth** credential: name `x-api-key`, value your key.\n4. Select that credential on **List connected accounts** and **Publish to every selected account**.\n5. Edit **Your video and caption**.\n\n### Requirements\n- A Multi Upload Tool API key.\n- A video URL n8n can download. File parts are capped at 100 MB; for bigger files use the presigned upload flow in the docs.\n\n### How to customize\n- `platforms` is a comma-separated list: `tiktok`, `youtube`, `instagram`, `facebook`, `linkedin`, `pinterest`, `bluesky`, `threads`, `x`.\n- Add a `schedule_date` body field (ISO 8601, at least 15 minutes ahead) to schedule the post instead of publishing now.\n- Swap the manual trigger for a Schedule, Google Drive or Google Sheets trigger to run it unattended.\n\nAPI docs: https://docs.multi-upload-tool.com",
+        "height": 820,
+        "width": 540,
+        "color": 3
+      },
+      "id": "b6666666-6666-4666-8666-666666666666",
+      "name": "About this template",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-900, 100]
+    },
+    {
+      "parameters": {
+        "content": "### 1. Your input\nThe only node you need to edit. `platforms` picks which of your connected accounts receive the video.",
+        "height": 200,
+        "width": 280,
+        "color": 7
+      },
+      "id": "b7777777-7777-4777-8777-777777777777",
+      "name": "Step 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-100, 40]
+    },
+    {
+      "parameters": {
+        "content": "### 2. Accounts and media\nLists your active connected accounts, then downloads the video as binary so it can be sent as a file.",
+        "height": 200,
+        "width": 420,
+        "color": 7
+      },
+      "id": "b8888888-8888-4888-8888-888888888888",
+      "name": "Step 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, 40]
+    },
+    {
+      "parameters": {
+        "content": "### 3. Publish everywhere at once\nOne bulk call; the response holds one result per account.",
+        "height": 200,
+        "width": 280,
+        "color": 7
+      },
+      "id": "b9999999-9999-4999-8999-999999999999",
+      "name": "Step 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [580, 40]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [[{ "node": "Your video and caption", "type": "main", "index": 0 }]]
+    },
+    "Your video and caption": {
+      "main": [[{ "node": "List connected accounts", "type": "main", "index": 0 }]]
+    },
+    "List connected accounts": {
+      "main": [[{ "node": "Download the video", "type": "main", "index": 0 }]]
+    },
+    "Download the video": {
+      "main": [[{ "node": "Publish to every selected account", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
