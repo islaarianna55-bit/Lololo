@@ -1,0 +1,507 @@
+{
+  "name": "Track new SAM.gov contract opportunities in Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Track new SAM.gov contract opportunities in Google Sheets\n\n### Who it's for\nSmall federal contractors and BD teams who want a running pipeline sheet of SAM.gov opportunities.\n\n### How it works\n1. **Schedule** fires every morning at 7:00.\n2. **Run SAM.gov Opportunity Radar** calls the Apify Actor and returns only **new or amended** notices for your filters.\n3. **Has notice?** stops on empty days.\n4. **Pick columns** keeps 16 fields.\n5. **Append or update in Google Sheets** matches on `noticeId`, so amended notices update their row.\n\n### How to set up\n1. Get your Apify API token: Apify Console > Settings > API & Integrations.\n2. In *Run SAM.gov Opportunity Radar*, create a **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_APIFY_TOKEN`. Never paste the token into the URL or body.\n3. Connect your **Google Sheets** credential, paste your spreadsheet ID, and put the 16 column names from *Pick columns* in row 1.\n4. Run once manually, check the output, then activate.\n\n### Customize the input\nEdit the JSON body of *Run SAM.gov Opportunity Radar*: `naicsCodes`, `setAside`, `state`, `keywords`. Keep `monitorName` fixed.\n\n### Requirements\nApify, pay per result: $0.01 per run + $0.004 per new or changed notice. No SAM.gov API key needed.\nActor: https://apify.com/cce_partners/samgov-opportunity-radar\n\n### How to extend\nAdd a Slack/email alert after the sheet step, or filter on `responseDeadline`.",
+        "height": 820,
+        "width": 480
+      },
+      "id": "56f56d4a-55d9-4583-8883-918aaa3a08dc",
+      "name": "Overview and setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1. Schedule\nChange the cron/interval here. Runs once per period; the Actor itself skips anything already sent.",
+        "height": 180,
+        "width": 220,
+        "color": 5
+      },
+      "id": "e29b94c4-104a-4062-9ae5-402a7e743b5e",
+      "name": "Step 1: Schedule",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2. Run SAM.gov Opportunity Radar on Apify\nPOST to run-sync-get-dataset-items with your filters in the JSON body. Auth: your Header Auth credential (`Authorization: Bearer <token>`). Timeout 300 s.",
+        "height": 240,
+        "width": 280,
+        "color": 5
+      },
+      "id": "41d594ad-bd2d-4aeb-aabe-a341c222470f",
+      "name": "Step 2: Run the Actor",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 3. Filter and deliver to Google Sheets\n*Has notice?* stops when there's nothing new. Then the results go to Google Sheets. Set your own credential and target (sheet ID / channel) on the last node.",
+        "height": 260,
+        "width": 600,
+        "color": 5
+      },
+      "id": "1b43e32c-8bd5-4376-beab-fe3ea7bc4aef",
+      "name": "Step 3: Deliver",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "aa5758ec-5b78-46ec-9ca7-433d53d239db",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/cce_partners~samgov-opportunity-radar/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "timeout",
+              "value": "280"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"naicsCodes\": [\n    \"541512\"\n  ],\n  \"setAside\": \"SBA\",\n  \"lookbackDays\": 2,\n  \"maxItems\": 25,\n  \"monitorName\": \"n8n-daily\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "c34481f4-c202-4dd9-b5a2-c7f4550adc82",
+      "name": "Run SAM.gov Opportunity Radar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "332dedf3-f88a-4292-b19e-12377c726d3d",
+              "leftValue": "={{ $json.noticeId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "56e51191-5bb0-4d4a-a1ff-373018d96d6d",
+      "name": "Has notice?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1309ba32-4f93-41f2-a870-bb0542c8f40d",
+              "name": "noticeId",
+              "value": "={{ $json.noticeId }}",
+              "type": "string"
+            },
+            {
+              "id": "7950e442-5fde-456f-aed1-6d5364f38beb",
+              "name": "changeType",
+              "value": "={{ $json.changeType }}",
+              "type": "string"
+            },
+            {
+              "id": "387e5cd4-b025-451f-87a4-421a141d26b9",
+              "name": "postedDate",
+              "value": "={{ $json.postedDate }}",
+              "type": "string"
+            },
+            {
+              "id": "31cdf7da-a650-4440-a4e7-01ce25e3ad7c",
+              "name": "responseDeadline",
+              "value": "={{ $json.responseDeadline }}",
+              "type": "string"
+            },
+            {
+              "id": "af05cb3c-da18-40a8-bf3b-5281a8b17afe",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "22556b47-fb9a-41e9-a9a0-36443fc40df3",
+              "name": "noticeType",
+              "value": "={{ $json.noticeType }}",
+              "type": "string"
+            },
+            {
+              "id": "79e0e605-76fa-4745-a2a6-31a1eca983ba",
+              "name": "department",
+              "value": "={{ $json.department }}",
+              "type": "string"
+            },
+            {
+              "id": "8ed6fe24-fec7-4bd6-af65-4509a5e21735",
+              "name": "subTier",
+              "value": "={{ $json.subTier }}",
+              "type": "string"
+            },
+            {
+              "id": "affad8ed-ae1e-4927-ac53-cd42123fb849",
+              "name": "office",
+              "value": "={{ $json.office }}",
+              "type": "string"
+            },
+            {
+              "id": "62571ead-e5b1-4370-873d-afbf0375f1b4",
+              "name": "naicsCode",
+              "value": "={{ $json.naicsCode }}",
+              "type": "string"
+            },
+            {
+              "id": "e80c1e40-37f1-4442-bcff-77c5937b8a4b",
+              "name": "pscCode",
+              "value": "={{ $json.pscCode }}",
+              "type": "string"
+            },
+            {
+              "id": "3bb1aa18-0562-4aa7-a39b-7c04a6b77c79",
+              "name": "setAside",
+              "value": "={{ $json.setAside }}",
+              "type": "string"
+            },
+            {
+              "id": "02ceaec1-f63a-478d-94bb-145872946c9a",
+              "name": "popState",
+              "value": "={{ $json.popState }}",
+              "type": "string"
+            },
+            {
+              "id": "94f0c4db-2c2e-4675-b2e7-0fb758057a74",
+              "name": "solicitationNumber",
+              "value": "={{ $json.solicitationNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "21f848b4-05fd-4472-a80e-7aaa1efdf5f2",
+              "name": "samUrl",
+              "value": "={{ $json.samUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "9e010eef-3c33-4bd6-81d5-c20d48be87ab",
+              "name": "description",
+              "value": "={{ ($json.description || '').slice(0, 5000) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "725ff405-88fe-4d40-961b-033bfbb80dc4",
+      "name": "Pick columns",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "noticeId"
+          ],
+          "schema": [
+            {
+              "id": "noticeId",
+              "displayName": "noticeId",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "changeType",
+              "displayName": "changeType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "postedDate",
+              "displayName": "postedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "responseDeadline",
+              "displayName": "responseDeadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "noticeType",
+              "displayName": "noticeType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subTier",
+              "displayName": "subTier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "office",
+              "displayName": "office",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "naicsCode",
+              "displayName": "naicsCode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pscCode",
+              "displayName": "pscCode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "setAside",
+              "displayName": "setAside",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "popState",
+              "displayName": "popState",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "solicitationNumber",
+              "displayName": "solicitationNumber",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "samUrl",
+              "displayName": "samUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b6744f7-4407-45ca-8f3e-30a6e2b52e87",
+      "name": "Append or update in Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        -100
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "Run SAM.gov Opportunity Radar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run SAM.gov Opportunity Radar": {
+      "main": [
+        [
+          {
+            "node": "Has notice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has notice?": {
+      "main": [
+        [
+          {
+            "node": "Pick columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Pick columns": {
+      "main": [
+        [
+          {
+            "node": "Append or update in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -180,7 +180,7 @@ Explore 20 Telegram automation templates for n8n, including AI chatbots with Lan
 
 ### What are the best n8n templates for Google Drive and Google Sheets?
 
-Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, and document summarization workflows. Perfect for operations, sales, marketing, and engineering teams.
+Browse 21 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, and document summarization workflows. Perfect for operations, sales, marketing, and engineering teams.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -202,6 +202,9 @@ Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes 
 | Summarize Google Sheets form feedback via OpenAI's GPT-4 | Summarizes feedback collected through Google Forms and stored in Google Sheets using OpenAI's GPT-4, providing quick insights from survey responses. | Marketing | [Link to Template](Google_Drive_and_Google_Sheets/Summarize%20Google%20Sheets%20form%20feedback%20via%20OpenAI_s%20GPT-4.json) |
 | Airtable to Google Sheets Auto-Sync | Automates bidirectional sync between Airtable and Google Sheets using n8n. Searches Airtable for recently updated records and upserts them into Google Sheets. | Ops | [Link to Template](Google_Drive_and_Google_Sheets/Airtable%20to%20Google%20Sheets%20Auto-Sync.json) |
 | Enrich a Google Sheet of companies with EU business register data | Takes a column of company names from a Google Sheet, looks each one up in the official register of seven European countries, and writes the registration number, VAT number, status and address back to the sheet. | Sales/Ops | [Link to Template](Google_Drive_and_Google_Sheets/Enrich%20a%20Google%20Sheet%20of%20companies%20with%20EU%20business%20register%20data.json) |
+| Track new SAM.gov contract opportunities in Google Sheets | Runs the SAM.gov Opportunity Radar Apify Actor on a schedule and upserts only new or amended federal contract opportunities (filtered by NAICS, set-aside, agency and state) to Google Sheets. Uses your own Apify token; the Actor is paid per result. | Sales/Business Development | [Link to Template](Google_Drive_and_Google_Sheets/Track%20new%20SAM.gov%20contract%20opportunities%20in%20Google%20Sheets.json) |
+| Add new SEC Form D funding raises to Google Sheets daily | Pulls new SEC Form D filings from EDGAR each day via an Apify Actor (company, amount offered and sold, industry, state, filing link) and upserts them into Google Sheets for sales and investor prospecting. Uses your own Apify token; paid per filing. | Sales/Finance | [Link to Template](Google_Drive_and_Google_Sheets/Add%20new%20SEC%20Form%20D%20funding%20raises%20to%20Google%20Sheets%20daily.json) |
+| Track expiring federal contracts and recompetes in Google Sheets | Lists federal contracts ending in the next 3-18 months from USAspending.gov via an Apify Actor and upserts new rows into Google Sheets as a recompete pipeline. Uses your own Apify token; paid per row. | Sales/Business Development | [Link to Template](Google_Drive_and_Google_Sheets/Track%20expiring%20federal%20contracts%20and%20recompetes%20in%20Google%20Sheets.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />
@@ -340,7 +343,7 @@ Discover 10 Notion automation templates for n8n. Store positive feedback from Ty
 
 ### How can I automate Slack with n8n?
 
-Explore 9 Slack automation templates for n8n. Monitor RSS feeds with AI-powered summaries, build Slack bots using Google Gemini, automate customer support ticketing with Linear, enhance security operations with Qualys integration, enrich Pipedrive CRM data, create IT knowledge base chatbots, track sentiment on support issues, and manage certificates via Venafi Cloud.
+Explore 10 Slack automation templates for n8n. Monitor RSS feeds with AI-powered summaries, build Slack bots using Google Gemini, automate customer support ticketing with Linear, enhance security operations with Qualys integration, enrich Pipedrive CRM data, create IT knowledge base chatbots, track sentiment on support issues, and manage certificates via Venafi Cloud.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -353,6 +356,7 @@ Explore 9 Slack automation templates for n8n. Monitor RSS feeds with AI-powered 
 | Sentiment Analysis Tracking on Support Issues with Linear and Slack | Tracks sentiment on support issues by integrating with Linear and Slack, performing sentiment analysis using OpenAI on Linear comments, and notifying relevant Slack channels. | Support | [Link to Template](Slack/Sentiment%20Analysis%20Tracking%20on%20Support%20Issues%20with%20Linear%20and%20Slack.json) |
 | Slack slash commands AI Chat Bot | Implements an AI chatbot accessible via Slack slash commands, processing user commands, interacting with an AI model, and responding within Slack. | IT | [Link to Template](Slack/Slack%20slash%20commands%20AI%20Chat%20Bot.json) |
 | Venafi Cloud Slack Cert Bot | Provides a Slack bot that interacts with Venafi Cloud for certificate management, allowing users to check certificate status, receive alerts, or request certificate actions via Slack. | Security | [Link to Template](Slack/Venafi%20Cloud%20Slack%20Cert%20Bot.json) |
+| Send new SAM.gov contract opportunities to Slack daily | Runs the SAM.gov Opportunity Radar Apify Actor every day and posts only new or amended federal contract opportunities to a Slack channel, so BD teams see fresh RFPs and sources-sought notices without checking SAM.gov. Uses your own Apify token; the Actor is paid per result. | Sales/Business Development | [Link to Template](Slack/Send%20new%20SAM.gov%20contract%20opportunities%20to%20Slack%20daily.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />

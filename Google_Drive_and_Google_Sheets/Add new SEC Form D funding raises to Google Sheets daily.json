@@ -1,0 +1,537 @@
+{
+  "name": "Add new SEC Form D funding raises to Google Sheets daily",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Add new SEC Form D funding raises to Google Sheets daily\n\n### Who it's for\nB2B sales teams, VC deal sourcing and funding newsletters who want companies that just raised money.\n\n### How it works\n1. **Schedule** fires on weekdays at 8:00.\n2. **Run SEC Form D New Raises Feed** pulls new Form D filings from SEC EDGAR via Apify. Funds are excluded and offerings are $1M+ by default; only filings not seen before (`stateKey`).\n3. **Has filings?** stops on empty days.\n4. **Pick columns** keeps the useful fields.\n5. **Append or update in Google Sheets** matches on `accessionNumber`.\n\n### How to set up\n1. Get your Apify API token: Apify Console > Settings > API & Integrations.\n2. In *Run SEC Form D New Raises Feed*, create a **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_APIFY_TOKEN`. Never paste the token into the URL or body.\n3. Connect your **Google Sheets** credential, paste your spreadsheet ID, and put the column names from *Pick columns* in row 1.\n4. Run once manually, check the output, then activate.\n\n### Customize the input\nEdit the JSON body of *Run SEC Form D New Raises Feed*: `states`, `industryGroups`, `minOfferingAmount`, `excludeFunds`, `lookbackDays`. Keep `stateKey` fixed so you only get new filings.\n\n### Requirements\nApify, pay per result: $0.01 per run + $0.005 per filing. Official SEC data, no personal names.\nActor: https://apify.com/cce_partners/sec-form-d-new-raises-feed\n\n### How to extend\nSend a Slack digest, enrich the company domain, or push rows to your CRM.",
+        "height": 820,
+        "width": 480
+      },
+      "id": "3c060b13-50c4-4126-8e06-722f7e365e35",
+      "name": "Overview and setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1. Schedule\nChange the cron/interval here. Runs once per period; the Actor itself skips anything already sent.",
+        "height": 180,
+        "width": 220,
+        "color": 5
+      },
+      "id": "59b37fe6-26fe-4642-8cdc-4b2a4d146bad",
+      "name": "Step 1: Schedule",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2. Run SEC Form D New Raises Feed on Apify\nPOST to run-sync-get-dataset-items with your filters in the JSON body. Auth: your Header Auth credential (`Authorization: Bearer <token>`). Timeout 300 s.",
+        "height": 240,
+        "width": 280,
+        "color": 5
+      },
+      "id": "e02541b9-9aad-4f8b-aa60-e35d97d26a5e",
+      "name": "Step 2: Run the Actor",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 3. Filter and deliver to Google Sheets\n*Has filings?* stops when there's nothing new. Then the results go to Google Sheets. Set your own credential and target (sheet ID / channel) on the last node.",
+        "height": 260,
+        "width": 600,
+        "color": 5
+      },
+      "id": "e64a19e0-f9fe-49dc-8e13-bda5158ba2ef",
+      "name": "Step 3: Deliver",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "0c890437-0f2b-4f51-9848-2c8eae2343eb",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/cce_partners~sec-form-d-new-raises-feed/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "timeout",
+              "value": "280"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"lookbackDays\": 3,\n  \"maxFilings\": 100,\n  \"excludeFunds\": true,\n  \"minOfferingAmount\": 1000000,\n  \"states\": [],\n  \"stateKey\": \"n8n-sheets\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "a7b56b05-bd5e-4b51-bd8e-c56d3bcaa0a0",
+      "name": "Run SEC Form D New Raises Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "a9834299-fde9-43ad-8277-25e042dd476a",
+              "leftValue": "={{ $json.accessionNumber }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "554066a8-750a-4589-822e-8853684deed9",
+      "name": "Has filings?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62cf6731-e3cd-4b37-9cc9-fe4ea3ca0eb6",
+              "name": "accessionNumber",
+              "value": "={{ $json.accessionNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "b825ff1c-2eac-4b52-95d6-7291f36f549e",
+              "name": "filingDate",
+              "value": "={{ $json.filingDate }}",
+              "type": "string"
+            },
+            {
+              "id": "fcff1f7d-7678-41c5-9d24-010800bf6714",
+              "name": "issuerName",
+              "value": "={{ $json.issuerName }}",
+              "type": "string"
+            },
+            {
+              "id": "832c49f9-51f0-4c84-b8c0-f3d85de1d634",
+              "name": "cik",
+              "value": "={{ $json.cik }}",
+              "type": "string"
+            },
+            {
+              "id": "8dda3945-44f2-4785-806c-814ca0f5b8fd",
+              "name": "formType",
+              "value": "={{ $json.formType }}",
+              "type": "string"
+            },
+            {
+              "id": "f9443883-0890-4fb3-a2df-101a5d973a0b",
+              "name": "state",
+              "value": "={{ $json.state }}",
+              "type": "string"
+            },
+            {
+              "id": "427f02b0-9db9-44e0-abcc-74a87360a347",
+              "name": "stateDescription",
+              "value": "={{ $json.stateDescription }}",
+              "type": "string"
+            },
+            {
+              "id": "652dfcbb-4333-4757-af4a-22b9e15303b8",
+              "name": "entityType",
+              "value": "={{ $json.entityType }}",
+              "type": "string"
+            },
+            {
+              "id": "e03053bb-ecd5-461c-8fe9-da0341e9abb7",
+              "name": "industryGroup",
+              "value": "={{ $json.industryGroup }}",
+              "type": "string"
+            },
+            {
+              "id": "ca43008a-1924-4779-9ae9-88994bc94d27",
+              "name": "investmentFundType",
+              "value": "={{ $json.investmentFundType }}",
+              "type": "string"
+            },
+            {
+              "id": "494db450-7966-4cc7-a6e9-27084891d762",
+              "name": "totalOfferingAmount",
+              "value": "={{ $json.totalOfferingAmount }}",
+              "type": "string"
+            },
+            {
+              "id": "2e64f77e-7fe2-46c6-bcc1-5128aa2da198",
+              "name": "totalOfferingIndefinite",
+              "value": "={{ $json.totalOfferingIndefinite }}",
+              "type": "string"
+            },
+            {
+              "id": "8558d43f-70b5-4e62-80df-14bd8d044e68",
+              "name": "totalAmountSold",
+              "value": "={{ $json.totalAmountSold }}",
+              "type": "string"
+            },
+            {
+              "id": "318d3e69-47cc-4a70-9757-1f29bc9e9930",
+              "name": "totalRemaining",
+              "value": "={{ $json.totalRemaining }}",
+              "type": "string"
+            },
+            {
+              "id": "457b73f3-6726-4418-96aa-99b348ac4d5f",
+              "name": "dateOfFirstSale",
+              "value": "={{ $json.dateOfFirstSale }}",
+              "type": "string"
+            },
+            {
+              "id": "ef4b2317-619c-46ec-b921-8415a34a1b20",
+              "name": "isAmendment",
+              "value": "={{ $json.isAmendment }}",
+              "type": "string"
+            },
+            {
+              "id": "bed75e54-ce3d-4f39-853c-226564739e19",
+              "name": "filingUrl",
+              "value": "={{ $json.filingUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "04051126-cc1d-4d3c-8d7a-4e243d90e550",
+              "name": "primaryDocUrl",
+              "value": "={{ $json.primaryDocUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b25776bf-a00a-4ecb-8813-b8db122cf857",
+      "name": "Pick columns",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "accessionNumber"
+          ],
+          "schema": [
+            {
+              "id": "accessionNumber",
+              "displayName": "accessionNumber",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filingDate",
+              "displayName": "filingDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "issuerName",
+              "displayName": "issuerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cik",
+              "displayName": "cik",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "formType",
+              "displayName": "formType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stateDescription",
+              "displayName": "stateDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entityType",
+              "displayName": "entityType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "industryGroup",
+              "displayName": "industryGroup",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "investmentFundType",
+              "displayName": "investmentFundType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalOfferingAmount",
+              "displayName": "totalOfferingAmount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalOfferingIndefinite",
+              "displayName": "totalOfferingIndefinite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalAmountSold",
+              "displayName": "totalAmountSold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalRemaining",
+              "displayName": "totalRemaining",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateOfFirstSale",
+              "displayName": "dateOfFirstSale",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "isAmendment",
+              "displayName": "isAmendment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filingUrl",
+              "displayName": "filingUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "primaryDocUrl",
+              "displayName": "primaryDocUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97ccbaf2-79c8-44e1-90c7-b00b48e39349",
+      "name": "Append or update in Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        -100
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "Run SEC Form D New Raises Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run SEC Form D New Raises Feed": {
+      "main": [
+        [
+          {
+            "node": "Has filings?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has filings?": {
+      "main": [
+        [
+          {
+            "node": "Pick columns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Pick columns": {
+      "main": [
+        [
+          {
+            "node": "Append or update in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
