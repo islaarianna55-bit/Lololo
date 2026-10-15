@@ -1,0 +1,436 @@
+{
+  "name": "Save a Reddit thread and all its comments to Google Sheets and Notion",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Save a Reddit thread and all its comments\n\nReplaces the Reddit node's **Post Comment → Get Many** (and **Post → Get**) for anyone who loses Reddit API access. Paste thread links; you get every comment as a row in Google Sheets and a Notion page per thread with the post and its top comments. Uses the [Reddit Scraper](https://apify.com/harshmaur/reddit-scraper) Actor on Apify: no Reddit app or OAuth.\n\n### How it works\n1. **Settings** holds the thread links (one per line).\n2. **Get thread and comments** runs the Actor with `startUrls` and `crawlCommentsPerPost: true`. It returns one `post` item per thread plus one `comment` item per comment, replies included (`depth`, `parentId`).\n3. **Comment rows** go to the `Comments` tab in Google Sheets.\n4. **Group comments under each thread** builds one Notion page per thread with the body and the 15 most upvoted comments.\n\n### Setup\n1. Add the **Apify** node (`@apify/n8n-nodes-apify`, a verified community node) if your n8n does not have it yet.\n2. Create an **Apify API** credential (no Apify account yet? [Sign up free](https://console.apify.com/sign-up)) with the token from [Apify Console → Settings → API & Integrations](https://console.apify.com/settings/integrations). The free Apify plan includes monthly credit.\n3. Google Sheets: create a tab `Comments` with columns `thread, threadUrl, author, comment, upvotes, depth, postedAt, commentUrl`.\n4. Notion: create a database with a URL property `Reddit URL`, share it with your Notion integration, and pick it. Delete the branch you do not need.\n5. Paste your links into `threadUrls` and run **Execute workflow**.\n\n### Customization tips\n- Feed links from another node (form, sheet, webhook) instead of **Settings**.\n- `maxCommentsPerPost` caps cost on huge threads: each comment is a billed result.\n- Results cost $2 per 1,000 on Apify (less on paid Apify plans). The Apify node caps each run at $3.",
+        "height": 920,
+        "width": 560,
+        "color": 1
+      },
+      "id": "3d93868a-fa64-528c-9850-3b1782753faf",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Scrape the threads\nPost plus every comment, flat, with depth and parent IDs.",
+        "height": 360,
+        "width": 700,
+        "color": 7
+      },
+      "id": "c9f81f81-deb9-5946-adc6-928c36e46131",
+      "name": "Section fetch",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2a. One row per comment",
+        "height": 260,
+        "width": 520,
+        "color": 7
+      },
+      "id": "847b0562-c4f7-5a1b-a590-ee20861f8e9b",
+      "name": "Section sheets",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2b. One Notion page per thread",
+        "height": 280,
+        "width": 520,
+        "color": 7
+      },
+      "id": "5611f111-c2be-555a-95fa-5e4b500cdbb6",
+      "name": "Section notion",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        100
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0e60628c-8dae-52b8-a94b-c23714c16d91",
+      "name": "Run on demand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bb766361-0f35-5b3e-9313-b0452e9ad960",
+              "name": "threadUrls",
+              "value": "https://www.reddit.com/r/n8n/comments/1abcd2e/example_thread/\nhttps://www.reddit.com/r/SaaS/comments/1fghij3/another_thread/",
+              "type": "string"
+            },
+            {
+              "id": "3e407de5-ccb5-5a00-a0e4-bce4c6df85a6",
+              "name": "maxCommentsPerPost",
+              "value": 500,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9bdfae5d-fc93-562d-b9de-e8b6d9d61f83",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        120,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apifyApi",
+        "resource": "Actors",
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "9sHOY9RzPYGjmTHo8",
+          "cachedResultName": "Reddit Scraper - Posts, Comments, Search & Subreddits (harshmaur/reddit-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/9sHOY9RzPYGjmTHo8/input"
+        },
+        "customBody": "={{ JSON.stringify({ startUrls: $json.threadUrls.split(/\\s+/).filter(Boolean).map(url => ({ url })), crawlCommentsPerPost: true, maxCommentsPerPost: $json.maxCommentsPerPost, includeNSFW: false }, null, 2) }}",
+        "memory": 512,
+        "maxTotalChargeUsd": 3
+      },
+      "id": "5e984e2f-6cda-5d23-9569-82aa8a573b6b",
+      "name": "Get thread and comments",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        340,
+        40
+      ],
+      "credentials": {
+        "apifyApi": {
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b7135b5-cbb2-581f-a5c9-e5e91bb4b4af",
+              "leftValue": "={{ $json.dataType }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "comment"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "489ebf92-41b1-56fe-9354-d78542257768",
+      "name": "Keep comments",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Comments"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "thread": "={{ $('Get thread and comments').all().find((i) => i.json.id === $json.postId)?.json.title ?? '' }}",
+            "threadUrl": "={{ $('Get thread and comments').all().find((i) => i.json.id === $json.postId)?.json.postUrl ?? '' }}",
+            "author": "={{ $json.authorName }}",
+            "comment": "={{ $json.body }}",
+            "upvotes": "={{ $json.commentUpVotes }}",
+            "depth": "={{ $json.depth }}",
+            "postedAt": "={{ $json.commentCreatedAt }}",
+            "commentUrl": "={{ $json.url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "thread",
+              "displayName": "thread",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "threadUrl",
+              "displayName": "threadUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comment",
+              "displayName": "comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "upvotes",
+              "displayName": "upvotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depth",
+              "displayName": "depth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "postedAt",
+              "displayName": "postedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "commentUrl",
+              "displayName": "commentUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "951acaf7-212f-51f3-a8ef-d2fef0ca4b6b",
+      "name": "Add comment rows to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        900,
+        -100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map((i) => i.json);\nconst posts = items.filter((i) => i.dataType === 'post');\nconst comments = items.filter((i) => i.dataType === 'comment');\nconst clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);\n\nreturn posts.map((post) => {\n  const thread = comments\n    .filter((c) => c.postId === post.id)\n    .sort((a, b) => (b.commentUpVotes ?? 0) - (a.commentUpVotes ?? 0));\n  const top = thread\n    .slice(0, 15)\n    .map((c) => `${'  '.repeat(c.depth ?? 0)}u/${c.authorName} (${c.commentUpVotes ?? 0}): ${(c.body || '').replace(/\\s+/g, ' ')}`)\n    .join('\\n');\n  return {\n    json: {\n      title: post.title,\n      postUrl: post.postUrl,\n      communityName: post.communityName,\n      authorName: post.authorName,\n      upVotes: post.upVotes,\n      commentsCount: post.commentsCount,\n      commentsScraped: thread.length,\n      body: clip(post.body || '(link post) ' + (post.contentUrl || ''), 1900),\n      topComments: clip(top || '(no comments)', 1900),\n    },\n  };\n});"
+      },
+      "id": "8a9a4cbc-ccfe-50cb-b30a-e0fc852b837b",
+      "name": "Group comments under each thread",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "title": "={{ $json.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Reddit URL|url",
+              "urlValue": "={{ $json.postUrl }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "paragraph",
+              "textContent": "={{ $json.communityName }} · u/{{ $json.authorName }} · {{ $json.upVotes }} upvotes · {{ $json.commentsCount }} comments ({{ $json.commentsScraped }} scraped)"
+            },
+            {
+              "type": "heading_2",
+              "textContent": "Post"
+            },
+            {
+              "type": "paragraph",
+              "textContent": "={{ $json.body }}"
+            },
+            {
+              "type": "heading_2",
+              "textContent": "Top comments"
+            },
+            {
+              "type": "paragraph",
+              "textContent": "={{ $json.topComments }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d7c6bf51-1890-5f9a-87ac-b01e645be888",
+      "name": "Create Notion page per thread",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        200
+      ],
+      "credentials": {
+        "notionApi": {
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run on demand": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Get thread and comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get thread and comments": {
+      "main": [
+        [
+          {
+            "node": "Keep comments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Group comments under each thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep comments": {
+      "main": [
+        [
+          {
+            "node": "Add comment rows to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group comments under each thread": {
+      "main": [
+        [
+          {
+            "node": "Create Notion page per thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

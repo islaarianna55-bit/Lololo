@@ -1,0 +1,347 @@
+{
+  "name": "Track Reddit brand and competitor mentions in Slack and Gmail daily",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Reddit keyword alerts without the Reddit API\n\nGet every new Reddit post that mentions your brand, your competitors or your product category, once a day, in Slack and as an email digest. Built for people whose Reddit-node or RSS keyword alerts stop working after Reddit closes API access and RSS. It uses the [Reddit Scraper](https://apify.com/harshmaur/reddit-scraper) Actor on Apify: no Reddit app, OAuth or approval.\n\n### How it works\n1. **Every morning** runs at 08:00.\n2. **Get new keyword mentions** searches all of Reddit for each keyword, newest first, keeping posts from the last day (`postedAfter: \"1 day\"`).\n3. **Skip posts already sent** drops posts sent on an earlier day.\n4. One branch posts each mention to Slack; the other builds one grouped email and sends it with Gmail.\n\n### Setup\n1. Add the **Apify** node (`@apify/n8n-nodes-apify`, a verified community node) if your n8n does not have it yet.\n2. Create an **Apify API** credential (no Apify account yet? [Sign up free](https://console.apify.com/sign-up)) with the token from [Apify Console → Settings → API & Integrations](https://console.apify.com/settings/integrations). The free Apify plan includes monthly credit.\n3. Connect Slack and pick a channel, and/or connect Gmail. Delete the branch you do not need.\n4. In **Settings**, set `keywords` (comma-separated) and `emailTo`.\n\n### Customization tips\n- Watch one subreddit only: add `withinCommunity: 'r/yourniche'` to the Apify input.\n- Put a phrase in double quotes inside a keyword for exact matches.\n- Add `searchComments: true` to catch mentions inside comments too (each comment is a billed result).\n- Results cost $2 per 1,000 on Apify (less on paid Apify plans). The Apify node caps each run at $2.",
+        "height": 820,
+        "width": 560,
+        "color": 1
+      },
+      "id": "f7d61544-9351-5220-9e02-e6d47bb6022f",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Search Reddit\nOne Apify run searches every keyword for posts from the last day.",
+        "height": 360,
+        "width": 700,
+        "color": 7
+      },
+      "id": "bad18610-7a4b-5620-9e3f-7b20d94c6f6f",
+      "name": "Section fetch",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Alert\nSlack gets one message per post. Gmail gets one digest. Keep either branch.",
+        "height": 560,
+        "width": 920,
+        "color": 7
+      },
+      "id": "5c8e4d37-d40c-5002-a8e9-06f9a549e130",
+      "name": "Section deliver",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "dec52524-1442-5abb-b401-d82f2a7cca70",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -100,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f31133d-cdcd-522a-aa3c-474701d3648e",
+              "name": "keywords",
+              "value": "YourBrand, CompetitorOne, CompetitorTwo",
+              "type": "string"
+            },
+            {
+              "id": "983a22c4-c8fb-55a4-bc9c-603ea65d0980",
+              "name": "lookback",
+              "value": "1 day",
+              "type": "string"
+            },
+            {
+              "id": "b0e529d5-79fd-5479-9b00-ffd478621c6a",
+              "name": "maxPostsPerKeyword",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "d0a324e8-e921-5521-848b-81e0af36d240",
+              "name": "emailTo",
+              "value": "you@example.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3b6b3292-a8e4-52e1-ae67-9a0f8772213d",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        120,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apifyApi",
+        "resource": "Actors",
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "9sHOY9RzPYGjmTHo8",
+          "cachedResultName": "Reddit Scraper - Posts, Comments, Search & Subreddits (harshmaur/reddit-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/9sHOY9RzPYGjmTHo8/input"
+        },
+        "customBody": "={{ JSON.stringify({ searchTerms: $json.keywords.split(',').map(s => s.trim()).filter(Boolean), searchPosts: true, searchComments: false, searchSort: 'new', postedAfter: $json.lookback, maxPostsCount: $json.maxPostsPerKeyword, includeNSFW: false }, null, 2) }}",
+        "memory": 512,
+        "maxTotalChargeUsd": 2
+      },
+      "id": "5a9c8725-3f2b-562c-ad18-3a00e4b31bc5",
+      "name": "Get new keyword mentions",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        340,
+        40
+      ],
+      "credentials": {
+        "apifyApi": {
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4e688196-3efa-55a7-85c6-adc42fef3914",
+              "leftValue": "={{ $json.dataType }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "post"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4b6e5faf-9438-5e98-a770-bce6c7c6e6ca",
+      "name": "Keep posts only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "8e72f43e-04e3-5c23-ac59-71918240d742",
+      "name": "Skip posts already sent",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        860,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messageType": "text",
+        "text": "=:mag: *{{ $json.searchTerm }}* mentioned in {{ $json.communityName }}\n*<{{ $json.postUrl }}|{{ $json.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}>*\nu/{{ $json.authorName }} · {{ $json.upVotes }} upvotes · {{ $json.commentsCount }} comments",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurling": false
+        }
+      },
+      "id": "734361d6-a00a-54c9-8099-040f9ae60277",
+      "name": "Post each mention to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -40
+      ],
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst posts = $input.all().map((i) => i.json);\nif (posts.length === 0) return [];\n\nconst byTerm = {};\nfor (const p of posts) (byTerm[p.searchTerm || 'other'] ??= []).push(p);\n\nlet html = '';\nfor (const [term, list] of Object.entries(byTerm)) {\n  html += `<h3>${esc(term)} (${list.length})</h3><ul>`;\n  for (const p of list) {\n    const snippet = esc((p.body || '').slice(0, 200));\n    html += `<li><a href=\"${esc(p.postUrl)}\">${esc(p.title)}</a> in ${esc(p.communityName)}, ${p.upVotes ?? 0} upvotes, ${p.commentsCount ?? 0} comments${snippet ? `<br><small>${snippet}</small>` : ''}</li>`;\n  }\n  html += '</ul>';\n}\nreturn [{ json: { count: posts.length, html } }];"
+      },
+      "id": "adee7b5d-42d5-5c02-a936-6697d3833451",
+      "name": "Build email digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Settings').first().json.emailTo }}",
+        "subject": "={{ $json.count }} new Reddit mentions ({{ $now.toFormat('yyyy-LL-dd') }})",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "32925373-5e02-534f-b558-c2d7e1aea0c8",
+      "name": "Email the digest",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Get new keyword mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get new keyword mentions": {
+      "main": [
+        [
+          {
+            "node": "Keep posts only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep posts only": {
+      "main": [
+        [
+          {
+            "node": "Skip posts already sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip posts already sent": {
+      "main": [
+        [
+          {
+            "node": "Post each mention to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build email digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build email digest": {
+      "main": [
+        [
+          {
+            "node": "Email the digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

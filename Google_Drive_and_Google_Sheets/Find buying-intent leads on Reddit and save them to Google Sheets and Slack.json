@@ -1,0 +1,469 @@
+{
+  "name": "Find buying-intent leads on Reddit and save them to Google Sheets and Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Find buying-intent leads on Reddit every morning\n\nFor founders and sales teams who want to hear about people asking for a tool like theirs. Every morning this workflow searches Reddit for buying-intent phrases, saves each new post to Google Sheets and pings Slack. It runs on the [Reddit Scraper](https://apify.com/harshmaur/reddit-scraper) Actor on Apify, so it needs no Reddit API access.\n\n### How it works\n1. **Every morning** runs at 07:00.\n2. **Search Reddit for buying intent** searches each phrase for posts from the last day.\n3. **Optional AI filter**: when `useAiFilter` is true, the Actor labels each post with `wants_software` and **Keep real leads** drops posts labelled false (job ads, hiring, news, self-promotion).\n4. **Skip leads already saved** drops posts from earlier runs.\n5. Each lead is appended to Google Sheets and posted to Slack.\n\n### Setup\n1. Add the **Apify** node (`@apify/n8n-nodes-apify`, a verified community node) if your n8n does not have it yet.\n2. Create an **Apify API** credential (no Apify account yet? [Sign up free](https://console.apify.com/sign-up)) with the token from [Apify Console → Settings → API & Integrations](https://console.apify.com/settings/integrations). The free Apify plan includes monthly credit.\n3. Create a Google Sheet with a `Leads` tab and columns `date, subreddit, title, author, url, upvotes, comments, matched, aiLabel, snippet`. Connect Google Sheets and pick it.\n4. Connect Slack and pick a channel.\n5. Edit `phrases` (quotes mean exact match) and `community` in **Settings**.\n\n### Customization tips\n- The AI filter needs a paid Apify plan and adds about $0.60 per 1,000 posts. On the free plan leave `useAiFilter` false; the run ignores AI options anyway.\n- Rewrite the `wants_software` question in **Search Reddit for buying intent** to fit your product.\n- Results cost $2 per 1,000 on Apify (less on paid Apify plans). The Apify node caps each run at $2.",
+        "height": 900,
+        "width": 560,
+        "color": 1
+      },
+      "id": "110053af-7cb7-5a5e-ac33-02fb8ea67cde",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -340
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Search and label\nBuying-intent phrases, last day only, with an optional AI label.",
+        "height": 360,
+        "width": 700,
+        "color": 7
+      },
+      "id": "f2224824-9174-5fc9-a168-8e70a55dd2d1",
+      "name": "Section fetch",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Keep new, real leads\nDrops posts the AI marked as not a lead, then posts already saved.",
+        "height": 360,
+        "width": 480,
+        "color": 7
+      },
+      "id": "03fa9c96-cf8d-5bc9-9255-ef1c02eab63e",
+      "name": "Section filter",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Save and notify",
+        "height": 560,
+        "width": 300,
+        "color": 7
+      },
+      "id": "68b7ba46-1dfa-53ed-98f7-3bae5a6ffe50",
+      "name": "Section deliver",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "8a3091d1-3d1c-553a-89e0-681a0fdf4c3d",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -100,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48e45c70-2660-5039-99ad-221902d25987",
+              "name": "phrases",
+              "value": "\"looking for a tool\", \"alternative to\", \"any software that\", \"recommend an app for\"",
+              "type": "string"
+            },
+            {
+              "id": "e8205832-80b8-5a13-905a-2932f7676333",
+              "name": "community",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "97b40206-f3bc-5058-a045-7e3d1a39a65b",
+              "name": "lookback",
+              "value": "1 day",
+              "type": "string"
+            },
+            {
+              "id": "40996cb9-8011-5c55-9ee7-659263cb10eb",
+              "name": "maxPostsPerPhrase",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "205842ea-93e5-5160-92a9-97386699f1e8",
+              "name": "useAiFilter",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c525b2c-c5a5-510b-9f28-a4ed25fa9856",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        120,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apifyApi",
+        "resource": "Actors",
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "9sHOY9RzPYGjmTHo8",
+          "cachedResultName": "Reddit Scraper - Posts, Comments, Search & Subreddits (harshmaur/reddit-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/9sHOY9RzPYGjmTHo8/input"
+        },
+        "customBody": "={{ JSON.stringify({ searchTerms: $json.phrases.split(',').map(s => s.trim()).filter(Boolean), searchPosts: true, searchComments: false, searchSort: 'new', withinCommunity: $json.community, postedAfter: $json.lookback, maxPostsCount: $json.maxPostsPerPhrase, includeNSFW: false, ...($json.useAiFilter ? { customLabels: { wants_software: 'true only if the author is looking for a software product or an alternative to one; false for job ads, hiring, news and people promoting their own product' } } : {}) }, null, 2) }}",
+        "memory": 512,
+        "maxTotalChargeUsd": 2
+      },
+      "id": "6e26dba1-ac5a-5f2e-b31b-1bb72ec4887e",
+      "name": "Search Reddit for buying intent",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        340,
+        40
+      ],
+      "credentials": {
+        "apifyApi": {
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "79dd5226-1359-5379-bc0d-f0f86dd96d97",
+              "leftValue": "={{ $json.dataType }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "post"
+            },
+            {
+              "id": "aa4bff06-013e-578c-9b4a-b0ba908178e5",
+              "leftValue": "={{ String($json.customLabels?.wants_software ?? '').toLowerCase() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "false"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dd179820-3beb-54f6-a1ae-cb69df242469",
+      "name": "Keep real leads",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "806dc5d3-dc0a-5b1f-81c8-e2067b89fdab",
+      "name": "Skip leads already saved",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        860,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json.createdAt }}",
+            "subreddit": "={{ $json.communityName }}",
+            "title": "={{ $json.title }}",
+            "author": "={{ $json.authorName }}",
+            "url": "={{ $json.postUrl }}",
+            "upvotes": "={{ $json.upVotes }}",
+            "comments": "={{ $json.commentsCount }}",
+            "matched": "={{ $json.searchTerm }}",
+            "aiLabel": "={{ $json.customLabels?.wants_software ?? '' }}",
+            "snippet": "={{ ($json.body || '').slice(0, 500) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subreddit",
+              "displayName": "subreddit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "upvotes",
+              "displayName": "upvotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comments",
+              "displayName": "comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "matched",
+              "displayName": "matched",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "aiLabel",
+              "displayName": "aiLabel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f7df1572-d3db-509a-b956-faadb78f37b6",
+      "name": "Add lead to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1180,
+        -40
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messageType": "text",
+        "text": "=:dart: New Reddit lead ({{ $json.searchTerm }}) in {{ $json.communityName }}\n*<{{ $json.postUrl }}|{{ $json.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}>*{{ $json.body ? '\\n>' + $json.body.slice(0, 280).replace(/\\s+/g, ' ').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '' }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurling": false
+        }
+      },
+      "id": "dd33099f-4a17-5463-a02e-2aa3045e68dc",
+      "name": "Ping Slack about the lead",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1180,
+        200
+      ],
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Search Reddit for buying intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Reddit for buying intent": {
+      "main": [
+        [
+          {
+            "node": "Keep real leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep real leads": {
+      "main": [
+        [
+          {
+            "node": "Skip leads already saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip leads already saved": {
+      "main": [
+        [
+          {
+            "node": "Add lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ping Slack about the lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

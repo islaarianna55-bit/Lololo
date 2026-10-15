@@ -1,0 +1,285 @@
+{
+  "name": "Send new posts from subreddits to Slack every hour without Reddit RSS",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Send new subreddit posts to Slack every hour (Reddit RSS replacement)\n\nReddit RSS feeds stop on 2026-11-13. This workflow does the same job as an **RSS Read** node on `reddit.com/r/<name>/new/.rss`: every hour it posts each new thread from your subreddits to Slack. It uses the [Reddit Scraper](https://apify.com/harshmaur/reddit-scraper) Actor on Apify, so you need no Reddit app, OAuth or API approval.\n\n### How it works\n1. **Every hour** starts the run.\n2. **Settings** holds your subreddits and the look-back window.\n3. **Get new subreddit posts** runs the Apify Actor with `subredditUrls` and `postedAfter: \"70 minutes\"`.\n4. **Skip posts already sent** drops any post an earlier run already delivered (the 10-minute overlap means nothing slips between runs).\n5. **Post to Slack** sends title, link, subreddit, author and score.\n\n### Setup\n1. Add the **Apify** node (`@apify/n8n-nodes-apify`, a verified community node) if your n8n does not have it yet.\n2. Create an **Apify API** credential (no Apify account yet? [Sign up free](https://console.apify.com/sign-up)) with the token from [Apify Console → Settings → API & Integrations](https://console.apify.com/settings/integrations). The free Apify plan includes monthly credit.\n3. Connect Slack and pick a channel in **Post to Slack**.\n4. Edit `subreddits` in **Settings** (comma-separated names, e.g. `SaaS, startups`).\n\n### Customization tips\n- `maxPosts` is one cap shared by all your subreddits, so raise it if a busy one crowds out the rest.\n- Need fewer pings? Run every 6 hours and set `lookback` a little longer than the interval, e.g. `7 hours`.\n- Swap Slack for Discord, Teams, email or a database: every post carries `title`, `postUrl`, `body`, `communityName`, `authorName`, `createdAt`, `upVotes`, `commentsCount`.\n- Results cost $2 per 1,000 on Apify (less on paid Apify plans). The Apify node caps each run at $1.",
+        "height": 760,
+        "width": 560,
+        "color": 1
+      },
+      "id": "def2d424-72ab-550e-aed1-9085afea9d9c",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Fetch new posts\nSchedule, your settings, and one Apify run per hour.",
+        "height": 340,
+        "width": 700,
+        "color": 7
+      },
+      "id": "f2eee630-bf07-59d8-8677-6bf3e8e8e517",
+      "name": "Section fetch",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Deliver once\nDrop repeats from earlier runs, then post to Slack.",
+        "height": 340,
+        "width": 700,
+        "color": 7
+      },
+      "id": "4954f6fd-52da-5410-bd62-eb0deb1333ae",
+      "name": "Section deliver",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "72b408eb-6358-5fde-af61-4d05ea70cb5a",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -100,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "baa55878-9781-522f-84f3-6a783c4f201a",
+              "name": "subreddits",
+              "value": "SaaS, startups, Entrepreneur",
+              "type": "string"
+            },
+            {
+              "id": "98087f72-65a8-5130-99eb-c8a3072ad367",
+              "name": "lookback",
+              "value": "70 minutes",
+              "type": "string"
+            },
+            {
+              "id": "93897dd4-c282-5c66-929c-7ca210bbf1a0",
+              "name": "maxPosts",
+              "value": 100,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7fa9d427-c881-558b-8e12-7a286021e129",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        120,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apifyApi",
+        "resource": "Actors",
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "9sHOY9RzPYGjmTHo8",
+          "cachedResultName": "Reddit Scraper - Posts, Comments, Search & Subreddits (harshmaur/reddit-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/9sHOY9RzPYGjmTHo8/input"
+        },
+        "customBody": "={{ JSON.stringify({ subredditUrls: $json.subreddits.split(',').map(s => s.trim()).filter(Boolean), postedAfter: $json.lookback, maxPostsCount: $json.maxPosts, crawlCommentsPerPost: false, includeNSFW: false }, null, 2) }}",
+        "memory": 512,
+        "maxTotalChargeUsd": 1
+      },
+      "id": "560c59c0-3983-55ad-bde8-15d53586e842",
+      "name": "Get new subreddit posts",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        340,
+        40
+      ],
+      "credentials": {
+        "apifyApi": {
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ae225b1a-5d9e-5da5-974d-85ca3d6a2066",
+              "leftValue": "={{ $json.dataType }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "post"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c287921c-2104-5f1d-8418-f0737c4d00ff",
+      "name": "Keep posts only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "b0e2ea92-755a-56aa-bcc5-46f6787917d1",
+      "name": "Skip posts already sent",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        860,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "messageType": "text",
+        "text": "=*<{{ $json.postUrl }}|{{ $json.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}>*\n{{ $json.communityName }} · u/{{ $json.authorName }} · {{ $json.upVotes }} upvotes · {{ $json.commentsCount }} comments",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurling": false
+        }
+      },
+      "id": "cb31523f-381f-533b-89cd-131e027cb47c",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1080,
+        40
+      ],
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Get new subreddit posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get new subreddit posts": {
+      "main": [
+        [
+          {
+            "node": "Keep posts only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep posts only": {
+      "main": [
+        [
+          {
+            "node": "Skip posts already sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip posts already sent": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
