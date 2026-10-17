@@ -1,0 +1,272 @@
+{
+  "name": "Review an OutreachGenie campaign with MCP",
+  "active": false,
+  "nodes": [
+    {
+      "id": "run-review",
+      "name": "Run Review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "choose-campaign",
+      "name": "Choose Campaign",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "campaign-id",
+              "name": "campaignId",
+              "value": "REPLACE_WITH_CAMPAIGN_UUID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "notes": "Open your campaign in OutreachGenie. Copy the UUID from /campaigns/UUID into campaignId. Run manually after selecting the same Bearer Auth credential in all three MCP Client nodes.",
+      "notesInFlow": true
+    },
+    {
+      "id": "validate-campaign",
+      "name": "Validate Campaign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const campaignId = String($input.first().json.campaignId ?? '').trim();\nif (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(campaignId)) throw new Error('Set campaignId to the UUID from your OutreachGenie campaign URL before running.');\nreturn [{ json: { campaignId: campaignId.toLowerCase(), startedAt: new Date().toISOString() } }];"
+      }
+    },
+    {
+      "id": "read-campaign",
+      "name": "Read Campaign",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "serverTransport": "httpStreamable",
+        "endpointUrl": "https://api.outreachgenie.ai/mcp",
+        "authentication": "bearerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "get_campaign"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { campaign_id: $('Validate Campaign').first().json.campaignId } }}",
+        "options": {
+          "timeout": 60000,
+          "convertToBinary": false
+        }
+      },
+      "notes": "Select your OutreachGenie Bearer Auth credential in this node. This is a read-only call. Raw response data may contain personal information.",
+      "notesInFlow": true
+    },
+    {
+      "id": "read-recent-activity",
+      "name": "Read Recent Activity",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "serverTransport": "httpStreamable",
+        "endpointUrl": "https://api.outreachgenie.ai/mcp",
+        "authentication": "bearerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "get_campaign_activity"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { campaign_id: $('Validate Campaign').first().json.campaignId, query: { page: 1, page_size: 50 } } }}",
+        "options": {
+          "timeout": 60000,
+          "convertToBinary": false
+        }
+      },
+      "notes": "Select your OutreachGenie Bearer Auth credential in this node. This is a read-only call. Raw response data may contain personal information.",
+      "notesInFlow": true
+    },
+    {
+      "id": "read-upcoming-actions",
+      "name": "Read Upcoming Actions",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "serverTransport": "httpStreamable",
+        "endpointUrl": "https://api.outreachgenie.ai/mcp",
+        "authentication": "bearerAuth",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "list_campaign_upcoming_actions"
+        },
+        "inputMode": "json",
+        "jsonInput": "={{ { campaign_id: $('Validate Campaign').first().json.campaignId, query: { page: 1, page_size: 50 } } }}",
+        "options": {
+          "timeout": 60000,
+          "convertToBinary": false
+        }
+      },
+      "notes": "Select your OutreachGenie Bearer Auth credential in this node. This is a read-only call. Raw response data may contain personal information.",
+      "notesInFlow": true
+    },
+    {
+      "id": "build-review",
+      "name": "Build Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// This source is embedded in the downloadable workflow by build-workflow.mjs.\nfunction unwrapMcp(node, label) {\n  let wrapper = node?.structuredContent;\n  if (!wrapper) {\n    const text = node?.content?.find((part) => part.type === 'text')?.text;\n    try { wrapper = typeof text === 'string' ? JSON.parse(text) : text; }\n    catch { throw new Error(`${label}: invalid MCP JSON response.`); }\n  }\n  if (!wrapper || typeof wrapper !== 'object' || !wrapper.result || typeof wrapper.result !== 'object') {\n    throw new Error(`${label}: expected OutreachGenie MCP result wrapper.`);\n  }\n  return wrapper.result;\n}\n\nfunction buildReview(config, campaign, activity, upcoming, completedAt) {\n  const fail = (message) => { throw new Error(`Review stopped: ${message}`); };\n  const integer = (value) => Number.isSafeInteger(value) && value >= 0;\n  const timestamp = (value) => typeof value === 'string' && /^\\d{4}-\\d{2}-\\d{2}T/.test(value) && Number.isFinite(Date.parse(value));\n  const safeText = (value) => String(value).replace(/[\\r\\n\\t]/g, ' ').replace(/[&<>\"'\\\\`*_{}\\[\\]()#+.!|~-]/g, (character) => `&#${character.charCodeAt(0)};`);\n  if (!timestamp(config.startedAt) || !timestamp(completedAt)) fail('capture timestamps are invalid.');\n  if (campaign.id !== config.campaignId || typeof campaign.name !== 'string' || typeof campaign.status !== 'string') fail('campaign identity or state does not match the selected campaign.');\n  const metricNames = ['actions_run_count', 'actions_completed_count', 'actions_failed_count', 'actions_skipped_count', 'actions_waiting_count', 'actions_remaining_count', 'connection_requests_sent_count', 'connection_requests_accepted_count', 'replies_count', 'reply_tracked_prospect_count'];\n  const metrics = {};\n  for (const name of metricNames) {\n    if (!integer(campaign.overview?.[name])) fail(`missing or invalid current overview field: ${name}.`);\n    metrics[name] = campaign.overview[name];\n  }\n  for (const name of ['connection_request_acceptance_rate', 'reply_rate']) {\n    const value = campaign.overview?.[name];\n    if (value !== null && (!integer(value) || value > 100)) fail(`missing or invalid current overview field: ${name}.`);\n    metrics[name] = value;\n  }\n  function page(payload, label) {\n    const p = payload?.pagination;\n    if (!Array.isArray(payload?.items) || !p || typeof p !== 'object' || Array.isArray(p)) fail(`${label}: missing pagination schema.`);\n    const nativeKeys = ['currentPage', 'pageSize', 'totalCount', 'hasNextPage'];\n    const normalizedKeys = ['page', 'page_size', 'total', 'has_more', 'next_page'];\n    const hasNative = nativeKeys.some((key) => Object.hasOwn(p, key));\n    const hasNormalized = normalizedKeys.some((key) => Object.hasOwn(p, key));\n    if (!hasNative && !hasNormalized) fail(`${label}: unexpected pagination schema.`);\n    if (hasNative && !nativeKeys.every((key) => Object.hasOwn(p, key))) fail(`${label}: incomplete native pagination fields.`);\n    if (hasNormalized && !normalizedKeys.every((key) => Object.hasOwn(p, key))) fail(`${label}: incomplete normalized pagination fields.`);\n    const currentPage = hasNative ? p.currentPage : p.page;\n    const pageSize = hasNative ? p.pageSize : p.page_size;\n    const total = hasNative ? p.totalCount : p.total;\n    const hasMore = hasNative ? p.hasNextPage : p.has_more;\n    if (currentPage !== 1 || pageSize !== 50 || !integer(total) || typeof hasMore !== 'boolean') fail(`${label}: unexpected first-page pagination values.`);\n    const length = payload.items.length;\n    if (length !== Math.min(50, total) || hasMore !== (total > length)) fail(`${label}: inconsistent first-page counts; no report was generated.`);\n    if (hasNormalized) {\n      for (const [key, expected] of [['page', currentPage], ['page_size', pageSize], ['total', total], ['has_more', hasMore], ['next_page', hasMore ? 2 : null]]) {\n        if (p[key] !== expected) fail(`${label}: normalized pagination fields disagree.`);\n      }\n    }\n    for (const [key, expected] of [['totalPages', Math.max(1, Math.ceil(total / 50))], ['startIndex', total ? 1 : 0], ['endIndex', length], ['hasPreviousPage', false], ['previous_page', null]]) {\n      if (Object.hasOwn(p, key) && p[key] !== expected) fail(`${label}: pagination metadata is inconsistent.`);\n    }\n    return { returned: length, availableAtFetch: total, incomplete: hasMore, page: 1, pageSize: 50 };\n  }\n  const activityCoverage = page(activity, 'Activity');\n  const upcomingCoverage = page(upcoming, 'Upcoming actions');\n  const outcomes = { completed: 0, failed: 0, skipped: 0, waiting: 0, pending: 0, running: 0, other: 0 };\n  const states = { queued: 0, scheduled: 0, on_hold: 0, blocked: 0 };\n  const activityTimes = [];\n  for (const row of activity.items) {\n    if (!row || !timestamp(row.recorded_at) || typeof row.outcome !== 'string') fail('activity row has an invalid recorded time or outcome.');\n    outcomes[Object.hasOwn(outcomes, row.outcome) ? row.outcome : 'other'] += 1;\n    activityTimes.push(new Date(row.recorded_at).toISOString());\n  }\n  const scheduledTimes = [];\n  let unscheduled = 0;\n  for (const row of upcoming.items) {\n    if (!row || !Object.hasOwn(states, row.schedule_state)) fail('upcoming row has an unsupported schedule state.');\n    states[row.schedule_state] += 1;\n    if (row.scheduled_at === null) unscheduled += 1;\n    else if (timestamp(row.scheduled_at)) scheduledTimes.push(new Date(row.scheduled_at).toISOString());\n    else fail('upcoming row has an invalid projected time.');\n  }\n  activityTimes.sort(); scheduledTimes.sort();\n  const range = (values) => values.length ? { earliest: values[0], latest: values.at(-1) } : null;\n  const report = {\n    schemaVersion: 1,\n    campaign: { id: campaign.id, name: campaign.name, status: campaign.status },\n    capture: { startedAt: config.startedAt, completedAt, atomic: false },\n    currentRecordedOverview: metrics,\n    recentActivityFirstPage: { coverage: activityCoverage, outcomes, recordedRange: range(activityTimes) },\n    upcomingFirstPage: { coverage: upcomingCoverage, scheduleStates: states, projectedRange: range(scheduledTimes), withoutProjectedTime: unscheduled },\n  };\n  const showRange = (value) => value ? `${value.earliest} to ${value.latest}` : 'None returned';\n  const coverageLine = (coverage) => `${coverage.returned} returned of ${coverage.availableAtFetch} available at that fetch. Page 1 only (limit 50). ${coverage.incomplete ? 'INCOMPLETE: additional pages were not fetched.' : 'All rows available at that fetch were returned.'}`;\n  const table = (entries) => ['| Recorded field | Value |', '| --- | --- |', ...entries.map(([key, value]) => `| ${safeText(key)} | ${value === null ? 'Unavailable' : value} |`)].join('\\n');\n  const markdown = [\n    '# OutreachGenie campaign review',\n    `Campaign: **${safeText(campaign.name)}**`, `Campaign ID: ${campaign.id}`, `Current state: ${safeText(campaign.status)}`,\n    `Capture started: ${config.startedAt}`, `Capture completed: ${completedAt}`,\n    'The three read calls run sequentially. This is a current snapshot, not an atomic snapshot or a period-performance report.',\n    '## Current recorded overview',\n    'These are stored campaign values at the campaign fetch, not counts for the activity page below. Recorded action totals count events, not unique people. Remaining actions count remaining flow action nodes in unfinished executions; they are not sent events or guaranteed future sends. Rates are percentages supplied by OutreachGenie; an unavailable rate is not zero.',\n    table(Object.entries(metrics)),\n    'Reply rate uses the tracked-prospect denominator. Connection acceptance uses recorded connection requests. Neither measures meetings, revenue or ROI.',\n    '## Recent activity: first page', coverageLine(activityCoverage),\n    `Recorded timestamp range among returned rows: ${showRange(report.recentActivityFirstPage.recordedRange)}.`,\n    'The service returns newest activity first. Counts below describe only these returned events; no date filter was applied.', table(Object.entries(outcomes)),\n    '## Upcoming actions: first page', coverageLine(upcomingCoverage), table(Object.entries(states)),\n    `Projected timestamp range among returned rows with a time: ${showRange(report.upcomingFirstPage.projectedRange)}.`,\n    `Returned rows without a projected time: ${unscheduled}.`,\n    'Upcoming means pending/waiting tasks on pending/waiting executions. It excludes other in-flight work and later steps that do not yet have tasks. Projected times are estimates; reading this report does not schedule or send anything. On-hold and blocked work needs review in OutreachGenie.',\n    '## Handling this report',\n    'The report omits prospect names, profile URLs, message bodies and individual activity details. It includes the chosen campaign name and aggregate business data: review it before sharing. Raw MCP node responses can contain personal data and remain visible during execution. Workflow persistence settings reduce saved execution data but do not replace your n8n access, logging, backup and retention policies.',\n    'No messages were sent and no campaign state was changed by this workflow.',\n  ].join('\\n\\n');\n  return { report, markdown, fileName: `outreachgenie-campaign-review-${campaign.id}.md` };\n}\n\nconst result = buildReview($('Validate Campaign').first().json, unwrapMcp($('Read Campaign').first().json, 'Campaign'), unwrapMcp($('Read Recent Activity').first().json, 'Activity'), unwrapMcp($('Read Upcoming Actions').first().json, 'Upcoming'), new Date().toISOString());\nreturn [{ json: result }];"
+      }
+    },
+    {
+      "id": "download-markdown",
+      "name": "Download Markdown",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "markdown",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileName": "={{ $json.fileName }}"
+        }
+      }
+    },
+    {
+      "id": "read-first",
+      "name": "Read first",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -310
+      ],
+      "parameters": {
+        "width": 710,
+        "height": 500,
+        "content": "## Read-only campaign review\n1. Set campaignId in Choose Campaign.\n2. Select your Bearer Auth credential in all 3 MCP Client nodes.\n3. Run manually and download the Markdown output.\n\nExactly one campaign, first 50 recent activity events and first 50 upcoming tasks. More pages are disclosed, not fetched. No LLM, send or write nodes.\n\nRaw node responses may contain personal data. Execution saving is disabled in this template; check your instance retention and access policies. Tested with n8n 2.35.7 using a local fictional MCP server, not a production workspace.\n\n[Setup and report example](https://www.outreachgenie.ai/blog/n8n-linkedin-campaign-review) · [MCP authentication](https://www.outreachgenie.ai/developers)\n\nRequires your own OutreachGenie workspace, an existing campaign and n8n. This workflow does not collect new prospects or send messages. Contributed by OutreachGenie with AI assistance under this repository's CC BY 4.0 licence; no affiliation with n8n."
+      }
+    }
+  ],
+  "connections": {
+    "Run Review": {
+      "main": [
+        [
+          {
+            "node": "Choose Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choose Campaign": {
+      "main": [
+        [
+          {
+            "node": "Validate Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Campaign": {
+      "main": [
+        [
+          {
+            "node": "Read Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Campaign": {
+      "main": [
+        [
+          {
+            "node": "Read Recent Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Recent Activity": {
+      "main": [
+        [
+          {
+            "node": "Read Upcoming Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Upcoming Actions": {
+      "main": [
+        [
+          {
+            "node": "Build Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Review": {
+      "main": [
+        [
+          {
+            "node": "Download Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 300
+  }
+}
