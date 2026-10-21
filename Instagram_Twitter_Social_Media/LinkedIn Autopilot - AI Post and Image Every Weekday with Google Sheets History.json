@@ -1,0 +1,706 @@
+{
+  "name": "LinkedIn Autopilot - AI Post and Image Every Weekday with Google Sheets History",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,13,18 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "93ff3ed4-1c3f-40dc-9bd7-fd265c9af651",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1200,
+        -960
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-01",
+              "name": "businessName",
+              "value": "YOUR_BUSINESS_NAME",
+              "type": "string"
+            },
+            {
+              "id": "cfg-02",
+              "name": "ownerName",
+              "value": "YOUR_FULL_NAME",
+              "type": "string"
+            },
+            {
+              "id": "cfg-03",
+              "name": "businessType",
+              "value": "Video Editing",
+              "type": "string"
+            },
+            {
+              "id": "cfg-04",
+              "name": "services",
+              "value": "YouTube video editing, Instagram Reels editing, TikTok video editing, color grading, motion graphics, podcast video editing",
+              "type": "string"
+            },
+            {
+              "id": "cfg-05",
+              "name": "targetAudience",
+              "value": "content creators, YouTubers, coaches, business owners who want professional-quality videos",
+              "type": "string"
+            },
+            {
+              "id": "cfg-06",
+              "name": "uniqueValue",
+              "value": "24-48 hour turnaround, cinematic quality, unlimited revisions, dedicated editor",
+              "type": "string"
+            },
+            {
+              "id": "cfg-07",
+              "name": "tone",
+              "value": "professional yet approachable, confident, uses real stories, avoids corporate jargon",
+              "type": "string"
+            },
+            {
+              "id": "cfg-08",
+              "name": "contentPillars",
+              "value": "[\"Why professional video editing transforms your brand\",\"Behind the scenes: how we approach each edit\",\"Client transformation: how our editing helped a creator grow\",\"5 video editing mistakes that look unprofessional\",\"Why smart business owners outsource video editing\",\"Video content trends dominating social media right now\",\"Service spotlight: our editing packages and process\"]",
+              "type": "string"
+            },
+            {
+              "id": "cfg-09",
+              "name": "maxPostsPerDay",
+              "value": "3",
+              "type": "string"
+            },
+            {
+              "id": "cfg-10",
+              "name": "googleSheetId",
+              "value": "YOUR_GOOGLE_FILE_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-11",
+              "name": "linkedinPersonUrn",
+              "value": "urn:li:person:YOUR_LINKEDIN_PERSON_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-12",
+              "name": "alertEmail",
+              "value": "you@example.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3932c801-1cc5-40e2-b690-b9d7d6bff706",
+      "name": "Business Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        -960
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.googleSheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "linkedin_posts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "09d7f3bf-f38e-4801-b4f2-31b516b16e86",
+      "name": "Get Post History",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -752,
+        -960
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Business Config').first().json;\nconst allRows = $input.all();\nlet contentPillars;\ntry { contentPillars = JSON.parse(config.contentPillars); }\ncatch(e) { contentPillars = [\"Industry tips\",\"Behind the scenes\",\"Client story\",\"Common mistakes\",\"Why outsource\",\"Latest trends\",\"Our services\"]; }\nconst today = new Date().toISOString().split('T')[0];\nconst todayPosts = allRows.filter(i => i.json && i.json.date === today && i.json.status === 'published');\nconst todayPostCount = todayPosts.length;\nconst maxPosts = parseInt(config.maxPostsPerDay) || 3;\nconst canPost = todayPostCount < maxPosts;\nif (!canPost) return [{ json: { ...config, canPost: false, todayPostCount, maxPostsPerDay: maxPosts } }];\nconst sortedRows = allRows.filter(i => i.json && i.json.topic).sort((a, b) => new Date(b.json.timestamp || b.json.date) - new Date(a.json.timestamp || a.json.date));\nconst recentTopics = sortedRows.slice(0, 7).map(i => i.json.topic).filter(Boolean);\nlet availableTopics = contentPillars.filter(t => !recentTopics.includes(t));\nif (availableTopics.length === 0) availableTopics = contentPillars;\nconst selectedTopic = availableTopics[Math.floor(Math.random() * availableTopics.length)];\nconst angles = [\"Share a personal story about this topic\",\"Give 5 practical actionable tips\",\"Bust a common myth about this topic\",\"Share a surprising fact or statistic\",\"Tell a client transformation story\",\"Write a thought-provoking question post\",\"Share a hard lesson learned\"];\nconst selectedAngle = angles[Math.floor(Math.random() * angles.length)];\nconst now = new Date();\nconst dayNames = [\"Sunday\",\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\"];\nconst h = now.getHours();\nreturn [{ json: { ...config, canPost: true, todayPostCount, maxPostsPerDay: maxPosts, remainingPostsToday: maxPosts - todayPostCount, selectedTopic, selectedAngle, dayName: dayNames[now.getDay()], timeSlot: h < 12 ? \"morning\" : h < 17 ? \"afternoon\" : \"evening\", generatedAt: now.toISOString() } }];"
+      },
+      "id": "daaf26d7-0029-457b-a7cc-9fce05edbce5",
+      "name": "Smart Topic Selector",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        -960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-canpost",
+              "leftValue": "={{ $json.canPost }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "423b0bfb-9f37-44ba-9c33-21aaf9951eed",
+      "name": "Under Daily Limit?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        -960
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are a LinkedIn content strategist writing posts for {{ $json.ownerName }}, owner of {{ $json.businessName }}, a {{ $json.businessType }} business.\nServices: {{ $json.services }}\nAudience: {{ $json.targetAudience }}\nUnique value: {{ $json.uniqueValue }}\nTone: {{ $json.tone }}\n\nLinkedIn post rules:\n1. Open with a POWERFUL hook in first 1-2 lines\n2. Write 150-250 words total\n3. Short paragraphs max 2-3 sentences each\n4. Include 3-5 bullet points OR a short story arc\n5. End with a conversational call-to-action\n6. Add exactly 5 relevant hashtags at the very end\n7. Write in first person as the business owner\n8. Sound human and authentic, never like AI\n9. NEVER use \"In the digital age\" or \"Exciting news\"\n10. Provide REAL value to the reader"
+            },
+            {
+              "content": "=Write a LinkedIn post about: {{ $json.selectedTopic }}\n\nWriting angle: {{ $json.selectedAngle }}\n\nIt is {{ $json.dayName }} {{ $json.timeSlot }}. Write naturally for this time.\n\nYou are {{ $json.ownerName }} from {{ $json.businessName }}.\nAudience: {{ $json.targetAudience }}\nMust feel written by a real expert in {{ $json.businessType }}, not AI."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.85
+        }
+      },
+      "id": "0635aa87-a13b-4775-ba97-2efdeaf592b3",
+      "name": "Generate LinkedIn Post",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        -960
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You create DALL-E 3 image prompts for LinkedIn posts. Rules: never include text or words in the image, professional and clean style, suitable for LinkedIn, photorealistic quality."
+            },
+            {
+              "content": "=Create a DALL-E 3 image prompt for this LinkedIn post topic:\n\"{{ $('Smart Topic Selector').first().json.selectedTopic }}\"\n\nBusiness type: {{ $('Business Config').first().json.businessType }}\n\nRequirements: professional, eye-catching, no text or words, LinkedIn-appropriate, photorealistic style.\nRespond with ONLY the image prompt. Nothing else."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 200,
+          "temperature": 0.7
+        }
+      },
+      "id": "8542d3bc-1aac-4bbb-9be9-67ede07db24c",
+      "name": "Generate Image Prompt",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1216,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/images?action=initializeUpload",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "LinkedIn-Version",
+              "value": "202504"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"initializeUploadRequest\": { \"owner\": \"{{ $('Business Config').first().json.linkedinPersonUrn }}\" } }",
+        "options": {}
+      },
+      "id": "f5dc4528-2d5f-48a0-8f9c-6be2d384f4db",
+      "name": "Register LinkedIn Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reg = $input.first();\nconst img = $('Generate GPT Image 1').first();\nconst uploadUrl = reg.json.value.uploadUrl;\nconst imageAssetId = reg.json.value.image;\nif (!uploadUrl || !imageAssetId) throw new Error('LinkedIn upload registration failed. Check OAuth credential and Person URN.');\nreturn [{\n  json: {\n    uploadUrl,\n    imageAssetId,\n    linkedinPersonUrn: $('Business Config').first().json.linkedinPersonUrn,\n    postText: $('Generate LinkedIn Post').first().json.output[0].content[0].text,\n    selectedTopic: $('Smart Topic Selector').first().json.selectedTopic,\n    selectedAngle: $('Smart Topic Selector').first().json.selectedAngle,\n    imagePrompt: $('Generate Image Prompt').first().json.output[0].content[0].text,\n    imageUrl: \"\"\n  },\n  binary: img.binary\n}];"
+      },
+      "id": "56dfb955-c206-4f08-98b7-4dce7d156a95",
+      "name": "Prepare Upload Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.uploadUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "da8a2762-9b63-420a-80fa-e309dc31604f",
+      "name": "Upload Image to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -192,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "LinkedIn-Version",
+              "value": "202504"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"author\": \"{{ $('Prepare Upload Data').first().json.linkedinPersonUrn }}\",\n  \"commentary\": {{ JSON.stringify($('Prepare Upload Data').first().json.postText) }},\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": { \"feedDistribution\": \"MAIN_FEED\", \"targetEntities\": [], \"thirdPartyDistributionChannels\": [] },\n  \"content\": { \"media\": { \"title\": {{ JSON.stringify($('Prepare Upload Data').first().json.selectedTopic) }}, \"id\": \"{{ $('Prepare Upload Data').first().json.imageAssetId }}\" } },\n  \"lifecycleState\": \"PUBLISHED\",\n  \"isReshareDisabledByAuthor\": false\n}",
+        "options": {}
+      },
+      "id": "2ecc0361-a095-4bba-9c6f-a0773a054d61",
+      "name": "Publish Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_FILE_ID/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "linkedin_posts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ new Date().toISOString().split('T')[0] }}",
+            "topic": "={{ $('Smart Topic Selector').first().json.selectedTopic }}",
+            "angle": "={{ $('Smart Topic Selector').first().json.selectedAngle }}",
+            "postText": "={{ $('Prepare Upload Data').first().json.postText }}",
+            "imagePrompt": "={{ $('Prepare Upload Data').first().json.imagePrompt }}",
+            "imageUrl": "={{ $('Prepare Upload Data').first().json.imageUrl }}",
+            "linkedinPostId": "={{ $json.id || 'published' }}",
+            "status": "published",
+            "timestamp": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "topic",
+              "displayName": "topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "angle",
+              "displayName": "angle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "postText",
+              "displayName": "postText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imagePrompt",
+              "displayName": "imagePrompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imageUrl",
+              "displayName": "imageUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinPostId",
+              "displayName": "linkedinPostId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0f398373-525b-413b-afe3-ad00ab3a0528",
+      "name": "Log Post to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        256,
+        -720
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "45db095c-9051-4fb6-a756-2a32a8cd2ae4",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "LinkedIn Autopilot Error - Action Required",
+        "message": "=<h2 style=\"color:#e94560;\">Workflow Error Alert</h2><p><strong>Workflow:</strong> {{ $json.execution.workflowData.name }}</p><p><strong>Error:</strong> {{ $json.execution.error.message }}</p><p><strong>Node:</strong> {{ $json.execution.error.node ? $json.execution.error.node.name : \"Unknown\" }}</p><p><strong>Time:</strong> {{ new Date().toLocaleString() }}</p><p><a href=\"{{ $json.execution.url }}\">View execution in n8n</a></p>",
+        "options": {}
+      },
+      "id": "a4dd20c8-2127-46c2-80cf-97d459ae47b9",
+      "name": "Send Error Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -976,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-image-1",
+          "mode": "list",
+          "cachedResultName": "Your Sheet"
+        },
+        "prompt": "={{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "id": "aa957d08-1203-47e2-aa24-244ace861372",
+      "name": "Generate GPT Image 1",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -864,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## LinkedIn Autopilot - AI Post and Image Every Weekday with Google Sheets History\n\nReplace every YOUR_... placeholder and connect your own credentials before activating.\n\n---\n**Author:** Jitendra Kavire ([n8nebooks.com](https://n8nebooks.com)). Full node-by-node setup guide: https://n8nebooks.com/ebook/free-n8n-starter-workflow",
+        "height": 260,
+        "width": 420
+      },
+      "id": "46a523bc-7cc3-4ff9-905c-3763201158d6",
+      "name": "Sticky Note - About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1696,
+        -960
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Business Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Config": {
+      "main": [
+        [
+          {
+            "node": "Get Post History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post History": {
+      "main": [
+        [
+          {
+            "node": "Smart Topic Selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Topic Selector": {
+      "main": [
+        [
+          {
+            "node": "Under Daily Limit?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Under Daily Limit?": {
+      "main": [
+        [
+          {
+            "node": "Generate LinkedIn Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "Generate Image Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate GPT Image 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register LinkedIn Upload": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upload Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Upload Data": {
+      "main": [
+        [
+          {
+            "node": "Upload Image to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Publish Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Log Post to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Send Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate GPT Image 1": {
+      "main": [
+        [
+          {
+            "node": "Register LinkedIn Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  }
+}

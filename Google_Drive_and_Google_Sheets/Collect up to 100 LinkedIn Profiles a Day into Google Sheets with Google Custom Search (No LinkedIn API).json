@@ -1,0 +1,361 @@
+{
+  "name": "Collect up to 100 LinkedIn Profiles a Day into Google Sheets with Google Custom Search (No LinkedIn API)",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc27b2d9-8de7-43ca-a741-2d150084f78e",
+              "name": "currentStartIndex",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "fc552c57-4510-4f04-aa09-2294306d0d9f",
+              "name": "maxPages",
+              "value": 100,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        160
+      ],
+      "id": "7c4290a6-6f61-48b7-87af-048f78aaeadd",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_GOOGLE_API_KEY"
+            },
+            {
+              "name": "cx",
+              "value": "YOUR_SEARCH_ENGINE_ID"
+            },
+            {
+              "name": "q",
+              "value": "=yoga consultant usa site:linkedin.com/in "
+            },
+            {
+              "name": "start",
+              "value": "={{ $runIndex == 0 ? $node[\"Set Fields\"].json.currentStartIndex : $node[\"Pagination Check\"].json.startIndex }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        160
+      ],
+      "id": "976fa91d-4fee-43c7-aeb1-283ff5b030be",
+      "name": "Search Google"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the response data\nconst response = $input.first().json;\nconst items = response.items || [];\n\n// Track pagination info\nlet nextStartIndex = 1;\nif (response.queries && response.queries.nextPage && response.queries.nextPage[0]) {\n  nextStartIndex = response.queries.nextPage[0].startIndex;\n}\n\n// Calculate if we should continue (Google only allows up to 100 results)\nconst hasMoreResults = nextStartIndex <= 100;\n\n// Process the items and include pagination info in each item\nconst results = items.map(item => {\n  const titleParts = item.title.split(\" - \");\n  return {\n    name: titleParts[0] || null,\n    title: titleParts.slice(1).join(\" - \") || null,\n    link: item.link || null,\n    snippet: item.snippet || null,\n    image: item.pagemap?.cse_thumbnail?.[0]?.src || null,\n    // Add pagination info to each item\n    startIndex: nextStartIndex,\n    hasMoreResults: hasMoreResults\n  };\n});\n\n// If there are no results, return at least one item with pagination info\nif (results.length === 0) {\n  return [{ \n    json: {\n      name: null,\n      title: null,\n      link: null,\n      snippet: null,\n      image: null,\n      email: null,\n      startIndex: nextStartIndex,\n      hasMoreResults: false\n    }\n  }];\n}\n\n// Return the processed results\nreturn results.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        160
+      ],
+      "id": "4896e329-0a18-46eb-afc2-31efa4adddea",
+      "name": "Extract Results"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "Your Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Your Sheet"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linkdine url": "={{ $json.link }}",
+            "Title": "={{ $json.title }}",
+            "Name": "={{ $json.name }}",
+            "description": "={{ $json.snippet }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Linkdine url",
+              "displayName": "Linkdine url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        160
+      ],
+      "id": "c1b3c447-9ea2-427b-903f-0bce9407b060",
+      "name": "Add to Google"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input items\nconst inputItems = $input.all();\nconsole.log(\"Input items count:\", inputItems.length);\n\n// Extract pagination values with fallbacks\nlet nextStartIndex = 1;\nlet hasMoreResults = false;\n\n// Try different approaches to find the pagination info\nif (inputItems && inputItems.length > 0) {\n  const firstItem = inputItems[0];\n  \n  // Check direct properties\n  if (firstItem.json) {\n    console.log(\"First item JSON:\", JSON.stringify(firstItem.json));\n    \n    // Check for \"index\" property (instead of startIndex)\n    if (firstItem.json.index !== undefined) {\n      nextStartIndex = firstItem.json.index;\n      console.log(\"Found index:\", nextStartIndex);\n    }\n    \n    // Check for \"results\" property (instead of hasMoreResults)\n    if (firstItem.json.results !== undefined) {\n      hasMoreResults = firstItem.json.results;\n      console.log(\"Found results:\", hasMoreResults);\n    }\n  }\n}\n\n// Return pagination control info\nreturn {\n  json: {\n    continueLoop: hasMoreResults,\n    startIndex: nextStartIndex\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        160
+      ],
+      "id": "ea2c6b63-61f1-454f-9a51-3be60858dc70",
+      "name": "Pagination"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faef2862-80a4-465b-9e0b-be5b9753dcbd",
+              "leftValue": "={{ $json.continueLoop }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        160
+      ],
+      "id": "74726f2f-8df7-4496-8f25-55dab149c6a5",
+      "name": "Pagination Check"
+    },
+    {
+      "parameters": {
+        "content": "## Google API Instructions\n\n1. Go to [Google Cloud Console](https://console.cloud.google.com/)\n   - Create a new project  \n   - Enable **Custom Search API**  \n   - Go to **Credentials** and copy your **API Key**\n\n2. Go to [Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/create)\n   - Create a name  \n   - Select **Search entire web**  \n   - Copy the **cx** value\n\n## Usage Limits (Free Tier)\n\n- The free tier of the Google Custom Search API allows **100 requests per day**\n- Each request returns **up to 10 search results**\n- This means you can get **up to 1,000 search results per day** at no cost\n\n\n---\n**Author:** Jitendra Kavire ([n8nebooks.com](https://n8nebooks.com)). Full node-by-node setup guide: https://n8nebooks.com/ebook/n8n-lead-generation-automations/chapter/5",
+        "height": 500,
+        "width": 360,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "a1626e18-20e4-4c8d-99d3-83df3032c13b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "formTitle": "linkdine leads ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "niche "
+            },
+            {
+              "fieldLabel": "location"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        160
+      ],
+      "id": "77ad51a6-7180-4102-9c7e-85a3acf8e5b5",
+      "name": "On form submission"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1216,
+        160
+      ],
+      "id": "58a073f3-a7cf-4eee-b6a5-f557bf31b9df",
+      "name": "Wait"
+    }
+  ],
+  "connections": {
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Search Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google": {
+      "main": [
+        [
+          {
+            "node": "Extract Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Results": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Google": {
+      "main": [
+        [
+          {
+            "node": "Pagination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagination": {
+      "main": [
+        [
+          {
+            "node": "Pagination Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagination Check": {
+      "main": [
+        [
+          {
+            "node": "Search Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Add to Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodeGroups": []
+}

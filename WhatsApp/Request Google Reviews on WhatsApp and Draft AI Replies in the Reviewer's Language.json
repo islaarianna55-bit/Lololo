@@ -1,0 +1,541 @@
+{
+  "name": "Request Google Reviews on WhatsApp and Draft AI Replies in the Reviewer's Language",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Review + Auto-Reply (Clinic Reputation)\n\n**Part 1 — Review Request:** A daily Schedule Trigger reads the *Completed Visits* Google Sheet, filters visits not yet asked, sends each patient a WhatsApp message containing the clinic's Google review link, then marks the row as requested.\n\n**Part 2 — Review Auto-Reply:** A daily Schedule Trigger reads new rows from the *Reviews* sheet (reviewer_name, rating, review_text). An AI Agent (OpenAI gpt-4o-mini) drafts a warm, professional reply — thanks happy reviewers, apologizes + offers to make it right for unhappy ones without admitting fault — and writes it back to the sheet. If rating ≤ 3, the manager gets a Telegram alert.\n\n**Tools/APIs:** Google Sheets OAuth2 · WhatsApp Business Cloud · OpenAI · Telegram.\n\n**IMPORTANT — Google Business Profile API (OAuth + business verification) is required to auto-FETCH and auto-POST Google reviews live; that verification is a real hurdle, so this workflow uses a Google Sheet as the review source/destination so it works TODAY, and the GBP API can be wired in later to replace the sheet.**\n\n**TODO before running:** set both Google Sheet documentIds, confirm sheet + column names, replace the placeholder review link, and confirm WhatsApp / Telegram / OpenAI credentials.\n\n---\n**Author:** Jitendra Kavire ([n8nebooks.com](https://n8nebooks.com)). Full node-by-node setup guide: https://n8nebooks.com/ebook/n8n-clinic-hospital-automations/chapter/4",
+        "height": 416,
+        "width": 1680,
+        "color": 4
+      },
+      "id": "bf2ce576-0d18-405f-b635-99754cc3017b",
+      "name": "Sticky Note - Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "714e2bbc-d652-430b-8598-b4b83ccccec9",
+      "name": "Schedule - Daily Visits",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Your Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Completed Visits"
+        },
+        "options": {}
+      },
+      "id": "2a25641b-f246-4769-a958-fa1701ce65af",
+      "name": "Read Completed Visits",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.review_requested }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              },
+              "id": "57c51f17-bc1e-4932-817c-d3a89ee9bbb1"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c7777003-cd98-4a37-89cf-db7b8475a145",
+      "name": "Filter New Visits",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "YOUR_WHATSAPP_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $json.phone }}",
+        "textBody": "=Hi {{ $json.patient_name }}, thank you for visiting our clinic! We'd love to hear how it went. If you have a moment, please leave us a quick Google review — it really helps others find great care: https://g.page/r/YOUR-REVIEW-LINK/review\n\nThank you!",
+        "additionalFields": {}
+      },
+      "id": "7294a064-ba57-4ab0-b7ef-4baee0341b3e",
+      "name": "Send WhatsApp Review Request",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Your Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Completed Visits"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "visit_id"
+          ],
+          "value": {
+            "visit_id": "={{ $json.visit_id }}",
+            "review_requested": "yes",
+            "requested_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "visit_id",
+              "displayName": "visit_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_requested",
+              "displayName": "review_requested",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "requested_at",
+              "displayName": "requested_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "95b8ad9c-0859-4370-b108-d588855a9a94",
+      "name": "Mark Visit Requested",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "id": "YOUR_GOOGLE_FILE_ID",
+      "name": "Schedule - Daily Reviews",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Your Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reviews"
+        },
+        "options": {}
+      },
+      "id": "575128c7-153a-4cbf-9af6-b42a139dfa4f",
+      "name": "Read New Reviews",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.reply_draft }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              },
+              "id": "b933fe83-1acc-4fc4-8d23-3a7243c38307"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "349884cf-c014-4877-83fa-01c731b45715",
+      "name": "Filter Unreplied Reviews",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Draft a public Google review reply.\nReviewer name: {{ $json.reviewer_name }}\nStar rating: {{ $json.rating }}\nReview text: {{ $json.review_text }}",
+        "options": {
+          "systemMessage": "LANGUAGE RULE: Detect the language of the REVIEW and write the reply ENTIRELY in that SAME language and script (Hindi, Marathi, English US/UK, Spanish, French, Punjabi and more). Mirror the reviewer's language. Keep it warm and professional.\n\nYou are a warm, professional front-desk assistant for [Your Clinic Name], [Your City], writing PUBLIC replies to Google reviews. For positive reviews (4-5 stars): thank the reviewer warmly by name, keep it brief and genuine, and invite them back. For negative reviews (1-3 stars): apologize that their experience fell short, express genuine care, and offer to make it right by inviting them to contact [Your Clinic Name], [Your City] directly. Do NOT admit fault or wrongdoing, do NOT discuss any specific medical details, and do NOT name individual staff. Keep every reply under 60 words, friendly, and privacy-safe. Output ONLY the reply text, nothing else."
+        }
+      },
+      "id": "b024abaa-2a91-4037-ada8-ca748688bfa0",
+      "name": "AI Draft Reply",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "Your Sheet"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "c8ecfc0f-8831-4795-8926-195faa759886",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Your Sheet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reviews"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "review_id"
+          ],
+          "value": {
+            "review_id": "={{ $json.review_id }}",
+            "reply_draft": "={{ $json.output }}",
+            "drafted_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "review_id",
+              "displayName": "review_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_draft",
+              "displayName": "reply_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "drafted_at",
+              "displayName": "drafted_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fba08b7e-0a04-4d7e-9a0a-28cdafc25ab7",
+      "name": "Write Drafted Reply",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Read New Reviews').item.json.rating }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              },
+              "id": "21cdf5bb-fff9-4c5d-baf9-b3032a9e252d"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3fa73a8e-37ba-4624-96ef-397a5611d384",
+      "name": "IF Low Rating",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=⚠️ Low Google review needs attention\nReviewer: {{ $('Read New Reviews').item.json.reviewer_name }}\nRating: {{ $('Read New Reviews').item.json.rating }}★\nReview: {{ $('Read New Reviews').item.json.review_text }}\n\nDraft reply: {{ $json.reply_draft }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c7b3959a-dd04-4bd9-b116-fed752bf4f7b",
+      "name": "Telegram Alert Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule - Daily Visits": {
+      "main": [
+        [
+          {
+            "node": "Read Completed Visits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Completed Visits": {
+      "main": [
+        [
+          {
+            "node": "Filter New Visits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Visits": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Review Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Review Request": {
+      "main": [
+        [
+          {
+            "node": "Mark Visit Requested",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule - Daily Reviews": {
+      "main": [
+        [
+          {
+            "node": "Read New Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read New Reviews": {
+      "main": [
+        [
+          {
+            "node": "Filter Unreplied Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unreplied Reviews": {
+      "main": [
+        [
+          {
+            "node": "AI Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Draft Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Write Drafted Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Drafted Reply": {
+      "main": [
+        [
+          {
+            "node": "IF Low Rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Low Rating": {
+      "main": [
+        [
+          {
+            "node": "Telegram Alert Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodeGroups": []
+}
