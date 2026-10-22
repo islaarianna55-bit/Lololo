@@ -180,7 +180,7 @@ Explore 20 Telegram automation templates for n8n, including AI chatbots with Lan
 
 ### What are the best n8n templates for Google Drive and Google Sheets?
 
-Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, and document summarization workflows. Perfect for operations, sales, marketing, and engineering teams.
+Browse 19 Google Drive and Google Sheets automation templates for n8n. Includes RAG chatbots for company documents, OpenAI model fine-tuning pipelines, automated background removal, lead qualification and routing, applicant screening for HR, and document summarization workflows. Perfect for operations, sales, marketing, and engineering teams.
 
 | Title | Description | Department | Link |
 |-------|-------------|------------|------|
@@ -202,6 +202,7 @@ Browse 18 Google Drive and Google Sheets automation templates for n8n. Includes 
 | Summarize Google Sheets form feedback via OpenAI's GPT-4 | Summarizes feedback collected through Google Forms and stored in Google Sheets using OpenAI's GPT-4, providing quick insights from survey responses. | Marketing | [Link to Template](Google_Drive_and_Google_Sheets/Summarize%20Google%20Sheets%20form%20feedback%20via%20OpenAI_s%20GPT-4.json) |
 | Airtable to Google Sheets Auto-Sync | Automates bidirectional sync between Airtable and Google Sheets using n8n. Searches Airtable for recently updated records and upserts them into Google Sheets. | Ops | [Link to Template](Google_Drive_and_Google_Sheets/Airtable%20to%20Google%20Sheets%20Auto-Sync.json) |
 | Enrich a Google Sheet of companies with EU business register data | Takes a column of company names from a Google Sheet, looks each one up in the official register of seven European countries, and writes the registration number, VAT number, status and address back to the sheet. | Sales/Ops | [Link to Template](Google_Drive_and_Google_Sheets/Enrich%20a%20Google%20Sheet%20of%20companies%20with%20EU%20business%20register%20data.json) |
+| Keyword research in Google Sheets with search volume, difficulty and trademark risk | Reads keyword ideas from a Google Sheet, gets Google and Amazon monthly search volume, CPC, difficulty, intent and a US trademark risk flag through the Keyword Search Volume Actor on Apify, then writes a GO / HARD / LOW VOLUME / AVOID verdict back to each row. Needs an Apify account (pay per keyword). | Marketing | [Link to Template](Google_Drive_and_Google_Sheets/Keyword%20research%20in%20Google%20Sheets%20with%20search%20volume,%20difficulty%20and%20trademark%20risk.json) |
 
 > 🚀 **Automate any workflow.** [Start an n8n Cloud trial →](https://n8n.partnerlinks.io/h1pwwf5m4toe)
 <br />

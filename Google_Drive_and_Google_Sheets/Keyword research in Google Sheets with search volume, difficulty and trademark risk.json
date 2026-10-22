@@ -1,0 +1,367 @@
+{
+  "name": "Keyword research in Google Sheets with search volume, difficulty and trademark risk",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000001",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000002",
+      "name": "Every Monday 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "location",
+              "value": "United States",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "sources",
+              "value": "google,amazon",
+              "type": "string"
+            },
+            {
+              "id": "s3",
+              "name": "minVolume",
+              "value": 500,
+              "type": "number"
+            },
+            {
+              "id": "s4",
+              "name": "maxDifficulty",
+              "value": 40,
+              "type": "number"
+            },
+            {
+              "id": "s5",
+              "name": "batchSize",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "s6",
+              "name": "maxSpendPerBatchUsd",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "s7",
+              "name": "recheckAfterDays",
+              "value": 30,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000003",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Keywords",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000004",
+      "name": "Read keyword sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        400
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect keywords that are new or older than recheckAfterDays, dedupe them and split into batches.\nconst s = $('Settings').first().json;\nconst cutoff = Date.now() - Number(s.recheckAfterDays) * 86400000;\nconst seen = new Set();\nconst todo = [];\nfor (const item of $input.all()) {\n  const kw = String(item.json.keyword || '').trim(); // keep sheet text as-is so the upsert matches the row\n  if (!kw || seen.has(kw.toLowerCase())) continue;\n  seen.add(kw.toLowerCase());\n  const last = Date.parse(item.json.checked_at || '');\n  if (!isNaN(last) && last > cutoff) continue; // fresh enough, skip to save credit\n  todo.push(kw);\n}\nconst sources = String(s.sources).split(',').map(x => x.trim()).filter(Boolean);\nconst size = Math.max(1, Number(s.batchSize));\nconst out = [];\nfor (let i = 0; i < todo.length; i += size) {\n  out.push({ json: {\n    keywords: todo.slice(i, i + size),\n    sources,\n    location: s.location,\n    trademarkCheck: true,\n    maxTotalChargeUsd: Number(s.maxSpendPerBatchUsd),\n  }});\n}\nreturn out; // empty list = nothing to check, workflow stops here\n"
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000005",
+      "name": "Pick keywords and batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/vncntlabs~keyword-search-volume/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 300000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000006",
+      "name": "Get volume + trademark risk (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        400
+      ],
+      "notes": "Header Auth credential: Name = Authorization, Value = Bearer <your Apify API token>. Returns one item per keyword."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turn raw metrics into a verdict you can sort by in the sheet.\nconst s = $('Settings').first().json;\nconst out = [];\nfor (const { json: r } of $input.all()) {\n  if (r.type && r.type !== 'keyword') continue; // skipped/invalid rows\n  const g = r.googleSearchVolume ?? null;\n  const a = r.amazonSearchVolume ?? null;\n  const vol = Math.max(g ?? 0, a ?? 0);\n  const kd = r.keywordDifficulty ?? null;\n  const tm = r.trademarkRisk || 'none';\n  let verdict, reason;\n  if (tm === 'high' || tm === 'medium') { verdict = 'AVOID'; reason = `Trademark risk ${tm}: ${(r.trademarkFlaggedPhrases || []).join(', ')}`; }\n  else if (vol < Number(s.minVolume)) { verdict = 'LOW VOLUME'; reason = `Max monthly volume ${vol} < ${s.minVolume}`; }\n  else if (kd !== null && kd > Number(s.maxDifficulty)) { verdict = 'HARD'; reason = `Difficulty ${kd} > ${s.maxDifficulty}`; }\n  else { verdict = 'GO'; reason = tm === 'low' ? 'Volume and difficulty OK; low trademark risk, review matches' : 'Volume and difficulty OK'; }\n  out.push({ json: {\n    keyword: r.inputKeyword || r.keyword,\n    verdict, reason,\n    google_volume: g, amazon_volume: a,\n    cpc_usd: r.cpcUsd ?? null,\n    competition: r.competitionLevel ?? null,\n    difficulty: kd,\n    intent: Array.isArray(r.searchIntent) ? r.searchIntent.join(', ') : (r.searchIntent ?? null),\n    trademark_risk: tm,\n    trademark_phrases: (r.trademarkFlaggedPhrases || []).join(', '),\n    checked_at: new Date().toISOString().slice(0, 10),\n  }});\n}\nreturn out;\n"
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000007",
+      "name": "Score and flag",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Keywords",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "keyword"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000008",
+      "name": "Write results to sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Keyword research sheet with volume, difficulty and trademark screening\n\nKeep a list of keyword ideas in Google Sheets. This workflow fills in **Google and Amazon monthly search volume, CPC, competition, difficulty, intent** and a **US trademark risk flag**, then gives each keyword a verdict: **GO, HARD, LOW VOLUME or AVOID**.\n\nBuilt for print-on-demand, Etsy, Amazon Merch and KDP sellers who want to stop wasting designs on keywords nobody searches or that are trademarked.\n\nIt only re-checks keywords that are new or older than `recheckAfterDays`, so weekly runs stay cheap.",
+        "height": 400,
+        "width": 640
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000020",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Setup (about 5 minutes)\n\n1. **Sheet:** create a Google Sheet with a tab named `Keywords` and these header cells in row 1: `keyword, verdict, reason, google_volume, amazon_volume, cpc_usd, competition, difficulty, intent, trademark_risk, trademark_phrases, checked_at`. Put your ideas in the `keyword` column.\n2. **Google:** add a Google Sheets OAuth2 credential and select it on both sheet nodes, then paste your sheet URL into both.\n3. **Apify:** create an Apify account, copy your API token (Console > Settings > API & Integrations) and add an n8n **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_TOKEN`. Select it on the Apify node.\n4. Adjust **Settings** (market, sources, thresholds, spend cap) and click **Test workflow**.\n\nLeave `sources` as `google` only if you don't need Amazon volume.",
+        "height": 520,
+        "width": 640
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000021",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Settings\n`minVolume` and `maxDifficulty` decide GO vs LOW VOLUME / HARD. `maxSpendPerBatchUsd` caps the Apify charge per batch. `recheckAfterDays` skips rows checked recently.",
+        "height": 220,
+        "width": 300
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000022",
+      "name": "Thresholds",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Apify call\nRuns the Keyword Search Volume Actor synchronously, one request per batch. Billed to your Apify account per keyword (see the Actor's pricing page); the spend cap stops a batch early. Trademark screening is automated, not legal advice.",
+        "height": 220,
+        "width": 340
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000023",
+      "name": "Cost",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        900,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Verdict rules\n- **AVOID**: medium or high US trademark risk\n- **LOW VOLUME**: best of Google/Amazon volume below `minVolume`\n- **HARD**: difficulty above `maxDifficulty`\n- **GO**: everything else\n\nResults are upserted by `keyword`, so the sheet never duplicates rows.",
+        "height": 240,
+        "width": 400
+      },
+      "id": "7a2e4c10-5b3d-4f6a-9c1e-000000000024",
+      "name": "Verdicts",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Monday 8am": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Read keyword sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read keyword sheet": {
+      "main": [
+        [
+          {
+            "node": "Pick keywords and batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick keywords and batch": {
+      "main": [
+        [
+          {
+            "node": "Get volume + trademark risk (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get volume + trademark risk (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Score and flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score and flag": {
+      "main": [
+        [
+          {
+            "node": "Write results to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
